@@ -1,0 +1,406 @@
+CREATE OR ALTER PROCEDURE [dbo].[SP_insert_update_fact_lease_history]
+AS
+BEGIN
+    SET NOCOUNT ON
+    --Creating temp table 
+    create table #TMP_TABLE_LEASE_HISTORY
+    (
+        [Lease id] [VARCHAR](20)
+      , [Household ID/ Resh ID] [VARCHAR](20)
+      , [Unit ID] [VARCHAR](20)
+      , [site_id_property_unit_number] [varchar](50) not null
+      , [Reason for leasing] [VARCHAR](100)
+      , [Lease approved date] [VARCHAR](20)
+      , [Lease signed date] [VARCHAR](20)
+      , [Lease start date] [VARCHAR](20)
+      , [Lease end date] [VARCHAR](20)
+      , [Lease term] [VARCHAR](40)
+      , [Leasing consultant] [VARCHAR](100)
+      , [Move-in date] [VARCHAR](20)
+      , [Days Vacant And Off Market Before Move-In] [VARCHAR](10)
+      , [Max Of Applied Or Previous Move-Out Date] [VARCHAR](20)
+      , [Lease Rent] [VARCHAR](10)
+      , [Other Charges] [VARCHAR](10)
+      , [Lease Total] [VARCHAR](10)
+      , [Occupancy status] [VARCHAR](40)
+      , [Market + Addl.] [VARCHAR](10)
+      , [Applied date] [VARCHAR](20)
+      , [Credit approved date] [VARCHAR](20)
+      , [Cancel/deny date] [VARCHAR](20)
+      , [Denial reason] [VARCHAR](120)
+      , [Renewal start date] [VARCHAR](20)
+      , [Renewal end date] [VARCHAR](20)
+      , [Reason for renewal] [VARCHAR](120)
+      , [Next Lease Rent] [VARCHAR](20)
+      , [Next Lease Total] [VARCHAR](10)
+      , [Notice given date] [VARCHAR](10)
+      , [Scheduled move out] [VARCHAR](10)
+      , [Moved out date] [VARCHAR](10)
+      , [Move out reason] [VARCHAR](120)
+      , [Days Since Previous Move-Out] [VARCHAR](10)
+      , [Previous Move-Out Date] [VARCHAR](20)
+      , [Floor plan] [VARCHAR](60)
+      , [Lease Rent Variance] [VARCHAR](20)
+      , [Lease Total Variance] [VARCHAR](20)
+      , [Insert_date] [varchar](20)
+    )
+
+    INSERT INTO #TMP_TABLE_LEASE_HISTORY
+    (
+        [Lease id]
+      , [Household ID/ Resh ID]
+      , [Unit ID]
+      , [site_id_property_unit_number]
+      , [Reason for leasing]
+      , [Lease approved date]
+      , [Lease signed date]
+      , [Lease start date]
+      , [Lease end date]
+      , [Lease term]
+      , [Leasing consultant]
+      , [Move-in date]
+      , [Days Vacant And Off Market Before Move-In]
+      , [Max Of Applied Or Previous Move-Out Date]
+      , [Lease Rent]
+      , [Other Charges]
+      , [Lease Total]
+      , [Occupancy status]
+      , [Market + Addl.]
+      , [Applied date]
+      , [Credit approved date]
+      , [Cancel/deny date]
+      , [Denial reason]
+      , [Renewal start date]
+      , [Renewal end date]
+      , [Reason for renewal]
+      , [Next Lease Rent]
+      , [Next Lease Total]
+      , [Notice given date]
+      , [Scheduled move out]
+      , [Moved out date]
+      , [Move out reason]
+      , [Days Since Previous Move-Out]
+      , [Previous Move-Out Date]
+      , [Floor plan]
+      , [Lease Rent Variance]
+      , [Lease Total Variance]
+      , [Insert_date]
+    )
+    SELECT DISTINCT
+        LDS.[Lease id]
+      , LDS.[Household ID/ Resh ID]
+      , LDS.[Unit ID]
+      , DU.site_id_property_unit_number
+      , LDS.[Reason for leasing]
+      , LDS.[Lease approved date]
+      , LDS.[Lease signed date]
+      , LDS.[Lease start date]
+      , LDS.[Lease end date]
+      , LDS.[Lease term]
+      , LDS.[Leasing consultant]
+      , LDS.[Move-in date]
+      , LDS.[Days Vacant And Off Market Before Move-In]
+      , LDS.[Max Of Applied Or Previous Move-Out Date]
+      , LDS.[Lease Rent]
+      , LDS.[Other Charges]
+      , LDS.[Lease Total]
+      , LDS.[Occupancy status]
+      , LDS.[Market + Addl.]
+      , LDS.[Applied date]
+      , LDS.[Credit approved date]
+      , LDS.[Cancel/deny date]
+      , LDS.[Denial reason]
+      , LDS.[Renewal start date]
+      , LDS.[Renewal end date]
+      , LDS.[Reason for renewal]
+      , LDS.[Next Lease Rent]
+      , LDS.[Next Lease Total]
+      , LDS.[Notice given date]
+      , LDS.[Scheduled move out]
+      , LDS.[Moved out date]
+      , LDS.[Move out reason]
+      , LDS.[Days Since Previous Move-Out]
+      , LDS.[Previous Move-Out Date]
+      , LDS.[Floor plan]
+      , LDS.[Lease Rent Variance]
+      , LDS.[Lease Total Variance]
+      , LDS.[Insert_date]
+    FROM [Olympus_Property_Staging].[dbo].[lease_details_stage] LDS
+        LEFT JOIN [Olympus_Property_Analytics].[dbo].[dim_unit] DU
+            on LDS.[On Site id] = DU.[onsiteid]
+               and LDS.[Unit #] = DU.[unit_number]
+    WHERE LDS.[Unit #] != 'None'
+
+
+
+    --Cleaning temptable
+    UPDATE #TMP_TABLE_LEASE_HISTORY
+    SET [Lease id] = NULLIF([Lease id], 'None')
+      , [Household ID/ Resh ID] = NULLIF([Household ID/ Resh ID], 'None')
+      , [Unit ID] = NULLIF([Unit ID], 'None')
+      , [site_id_property_unit_number] = NULLIF([site_id_property_unit_number], 'None')
+      , [Reason for leasing] = NULLIF([Reason for leasing], 'None')
+      , [Lease approved date] = NULLIF([Lease approved date], 'None')
+      , [Lease signed date] = NULLIF([Lease signed date], 'None')
+      , [Lease start date] = NULLIF([Lease start date], 'None')
+      , [Lease end date] = NULLIF([Lease end date], 'None')
+      , [Lease term] = NULLIF([Lease term], 'None')
+      , [Leasing consultant] = NULLIF([Leasing consultant], 'None')
+      , [Move-in date] = NULLIF([Move-in date], 'None')
+      , [Days Vacant And Off Market Before Move-In] = NULLIF([Days Vacant And Off Market Before Move-In], 'None')
+      , [Max Of Applied Or Previous Move-Out Date] = NULLIF([Max Of Applied Or Previous Move-Out Date], 'None')
+      , [Lease Rent] = NULLIF([Lease Rent], 'None')
+      , [Other Charges] = NULLIF([Other Charges], 'None')
+      , [Lease Rent Variance] = NULLIF([Lease Rent Variance], 'None')
+      , [Lease Total] = NULLIF([Lease Total], 'None')
+      , [Lease Total Variance] = NULLIF([Lease Total Variance], 'None')
+      , [Occupancy status] = NULLIF([Occupancy status], 'None')
+      , [Market + Addl.] = NULLIF([Market + Addl.], 'None')
+      , [Applied date] = NULLIF([Applied date], 'None')
+      , [Credit approved date] = NULLIF([Credit approved date], 'None')
+      , [Cancel/deny date] = NULLIF([Cancel/deny date], 'None')
+      , [Denial reason] = NULLIF([Denial reason], 'None')
+      , [Renewal start date] = NULLIF([Renewal start date], 'None')
+      , [Renewal end date] = NULLIF([Renewal end date], 'None')
+      , [Reason for renewal] = NULLIF([Reason for renewal], 'None')
+      , [Next Lease Rent] = NULLIF([Next Lease Rent], 'None')
+      , [Next Lease Total] = NULLIF([Next Lease Total], 'None')
+      , [Notice given date] = NULLIF([Notice given date], 'None')
+      , [Scheduled move out] = NULLIF([Scheduled move out], 'None')
+      , [Moved out date] = NULLIF([Moved out date], 'None')
+      , [Move out reason] = NULLIF([Move out reason], 'None')
+      , [Days Since Previous Move-Out] = NULLIF([Days Since Previous Move-Out], 'None')
+      , [Previous Move-Out Date] = NULLIF([Previous Move-Out Date], 'None')
+      , [Floor plan] = NULLIF([Floor plan], 'None')
+
+
+
+
+    UPDATE #TMP_TABLE_LEASE_HISTORY
+    SET [Lease id] = NULLIF([Lease id], '')
+      , [Household ID/ Resh ID] = NULLIF([Household ID/ Resh ID], '')
+      , [Unit ID] = NULLIF([Unit ID], '')
+      , [site_id_property_unit_number] = NULLIF([site_id_property_unit_number], '')
+      , [Reason for leasing] = NULLIF([Reason for leasing], '')
+      , [Lease approved date] = NULLIF([Lease approved date], '')
+      , [Lease signed date] = NULLIF([Lease signed date], '')
+      , [Lease start date] = NULLIF([Lease start date], '')
+      , [Lease end date] = NULLIF([Lease end date], '')
+      , [Lease term] = NULLIF([Lease term], '')
+      , [Leasing consultant] = NULLIF([Leasing consultant], '')
+      , [Move-in date] = NULLIF([Move-in date], '')
+      , [Days Vacant And Off Market Before Move-In] = NULLIF([Days Vacant And Off Market Before Move-In], '')
+      , [Max Of Applied Or Previous Move-Out Date] = NULLIF([Max Of Applied Or Previous Move-Out Date], '')
+      , [Lease Rent] = NULLIF([Lease Rent], '')
+      , [Other Charges] = NULLIF([Other Charges], '')
+      , [Lease Rent Variance] = NULLIF([Lease Rent Variance], '')
+      , [Lease Total] = NULLIF([Lease Total], '')
+      , [Lease Total Variance] = NULLIF([Lease Total Variance], '')
+      , [Occupancy status] = NULLIF([Occupancy status], '')
+      , [Market + Addl.] = NULLIF([Market + Addl.], '')
+      , [Applied date] = NULLIF([Applied date], '')
+      , [Credit approved date] = NULLIF([Credit approved date], '')
+      , [Cancel/deny date] = NULLIF([Cancel/deny date], '')
+      , [Denial reason] = NULLIF([Denial reason], '')
+      , [Renewal start date] = NULLIF([Renewal start date], '')
+      , [Renewal end date] = NULLIF([Renewal end date], '')
+      , [Reason for renewal] = NULLIF([Reason for renewal], '')
+      , [Next Lease Rent] = NULLIF([Next Lease Rent], '')
+      , [Next Lease Total] = NULLIF([Next Lease Total], '')
+      , [Notice given date] = NULLIF([Notice given date], '')
+      , [Scheduled move out] = NULLIF([Scheduled move out], '')
+      , [Moved out date] = NULLIF([Moved out date], '')
+      , [Move out reason] = NULLIF([Move out reason], '')
+      , [Days Since Previous Move-Out] = NULLIF([Days Since Previous Move-Out], '')
+      , [Previous Move-Out Date] = NULLIF([Previous Move-Out Date], '')
+      , [Floor plan] = NULLIF([Floor plan], '')
+
+
+
+
+
+    UPDATE #TMP_TABLE_LEASE_HISTORY
+    SET [Days Vacant And Off Market Before Move-In] = LEFT([Days Vacant And Off Market Before Move-In], CHARINDEX(
+                                                                                                                     '.'
+                                                                                                                   , [Days Vacant And Off Market Before Move-In]
+                                                                                                                     + '.'
+                                                                                                                 ) - 1)
+    WHERE [Days Vacant And Off Market Before Move-In] LIKE '%.%';
+
+
+    WITH Maxdates
+    AS (SELECT [lease_id]
+             , [household_id_Resh_id]
+             , [unit_id]
+             , [site_id_property_unit_number]
+             , [reason_for_leasing]
+             , [lease_approved_date]
+             , [lease_signed_date]
+             , [lease_start_date]
+             , [lease_end_date]
+             , [lease_term]
+             , [leasing_consultant]
+             , [move_in_date]
+             , [days_vacant_and_off_market_before_move-in]
+             , [max_of_applied_or_previous_move_out_date]
+             , [lease_rent]
+             , [other_charges]
+             , [lease_total]
+             , [occupancy_status]
+             , [market_plus_addl]
+             , [applied_date]
+             , [credit_approved_date]
+             , [cancel_deny_date]
+             , [denial_reason]
+             , [renewal_start_date]
+             , [renewal_end_date]
+             , [reason_for_renewal]
+             , [next_lease_rent]
+             , [next_lease_total]
+             , [notice_given_date]
+             , [scheduled_move_out]
+             , [moved_out_date]
+             , [move_out_reason]
+             , [days_since_previous_move-Out]
+             , [previous_move_out_date]
+             , [floor_plan]
+             , [lease_rent_variance]
+             , [lease_total_variance]
+             , [Insert_date]
+             , ROW_NUMBER() OVER (PARTITION BY lease_id
+                                             , site_id_property_unit_number
+                                  ORDER BY insert_date DESC
+                                 ) AS RowNum
+        FROM [Olympus_Property_Analytics].[dbo].[fact_lease_history]
+       )
+    INSERT INTO [Olympus_Property_Analytics].[dbo].[fact_lease_history]
+    (
+        [lease_id]
+      , [household_id_Resh_id]
+      , [unit_id]
+      , [site_id_property_unit_number]
+      , [reason_for_leasing]
+      , [lease_approved_date]
+      , [lease_signed_date]
+      , [lease_start_date]
+      , [lease_end_date]
+      , [lease_term]
+      , [leasing_consultant]
+      , [move_in_date]
+      , [days_vacant_and_off_market_before_move-in]
+      , [max_of_applied_or_previous_move_out_date]
+      , [lease_rent]
+      , [other_charges]
+      , [lease_total]
+      , [occupancy_status]
+      , [market_plus_addl]
+      , [applied_date]
+      , [credit_approved_date]
+      , [cancel_deny_date]
+      , [denial_reason]
+      , [renewal_start_date]
+      , [renewal_end_date]
+      , [reason_for_renewal]
+      , [next_lease_rent]
+      , [next_lease_total]
+      , [notice_given_date]
+      , [scheduled_move_out]
+      , [moved_out_date]
+      , [move_out_reason]
+      , [days_since_previous_move-Out]
+      , [previous_move_out_date]
+      , [floor_plan]
+      , [lease_rent_variance]
+      , [lease_total_variance]
+    )
+    SELECT [Lease id]
+         , [Household ID/ Resh ID]
+         , [Unit ID]
+         , [site_id_property_unit_number]
+         , [Reason for leasing]
+         , [Lease approved date]
+         , [Lease signed date]
+         , [Lease start date]
+         , [Lease end date]
+         , [Lease term]
+         , [Leasing consultant]
+         , [Move-in date]
+         , [Days Vacant And Off Market Before Move-In]
+         , [Max Of Applied Or Previous Move-Out Date]
+         , [Lease Rent]
+         , [Other Charges]
+         , [Lease Total]
+         , [Occupancy status]
+         , [Market + Addl.]
+         , [Applied date]
+         , [Credit approved date]
+         , [Cancel/deny date]
+         , [Denial reason]
+         , [Renewal start date]
+         , [Renewal end date]
+         , [Reason for renewal]
+         , [Next Lease Rent]
+         , [Next Lease Total]
+         , [Notice given date]
+         , [Scheduled move out]
+         , [Moved out date]
+         , [Move out reason]
+         , [Days Since Previous Move-Out]
+         , [Previous Move-Out Date]
+         , [Floor plan]
+         , [Lease Rent Variance]
+         , [Lease Total Variance]
+    FROM #TMP_TABLE_LEASE_HISTORY
+    EXCEPT
+    SELECT [lease_id]
+         , [household_id_Resh_id]
+         , [unit_id]
+         , [site_id_property_unit_number]
+         , [reason_for_leasing]
+         , [lease_approved_date]
+         , [lease_signed_date]
+         , [lease_start_date]
+         , [lease_end_date]
+         , [lease_term]
+         , [leasing_consultant]
+         , [move_in_date]
+         , [days_vacant_and_off_market_before_move-in]
+         , [max_of_applied_or_previous_move_out_date]
+         , [lease_rent]
+         , [other_charges]
+         , [lease_total]
+         , [occupancy_status]
+         , [market_plus_addl]
+         , [applied_date]
+         , [credit_approved_date]
+         , [cancel_deny_date]
+         , [denial_reason]
+         , [renewal_start_date]
+         , [renewal_end_date]
+         , [reason_for_renewal]
+         , [next_lease_rent]
+         , [next_lease_total]
+         , [notice_given_date]
+         , [scheduled_move_out]
+         , [moved_out_date]
+         , [move_out_reason]
+         , [days_since_previous_move-Out]
+         , [previous_move_out_date]
+         , [floor_plan]
+         , [lease_rent_variance]
+         , [lease_total_variance]
+    FROM Maxdates
+    WHERE RowNum = 1;
+
+
+
+
+
+
+
+
+    -- Clean up the temporary table
+    drop table #TMP_TABLE_LEASE_HISTORY
+
+END
+

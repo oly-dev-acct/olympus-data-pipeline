@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Demographics Dashboard – Olympus Property</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1D1B18; background: #fff; padding: 32px 40px; }
+  h1 { font-size: 22px; color: #273B56; border-bottom: 3px solid #273B56; padding-bottom: 8px; margin-bottom: 6px; }
+  .subtitle { font-size: 12px; color: #6D6A63; margin-bottom: 28px; }
+  h2 { font-size: 15px; font-weight: 700; color: #273B56; background: #F1F5F9; padding: 7px 12px; border-left: 4px solid #273B56; margin: 24px 0 10px; }
+  h3 { font-size: 13px; font-weight: 700; color: #0B3A3F; margin: 16px 0 6px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  thead tr { background: #273B56; color: #fff; }
+  thead th { padding: 9px 12px; text-align: left; font-size: 12px; font-weight: 600; }
+  tbody tr:nth-child(even) { background: #F8FAFC; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid #ECEAE5; font-size: 12.5px; }
+  .code { font-family: Consolas, monospace; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-size: 11.5px; color: #0B3A3F; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: #DBEAFE; color: #1D4ED8; }
+  .badge-gold { background: #FEF3C7; color: #92400E; }
+  .badge-teal { background: #D1FAE5; color: #065F46; }
+  .section-note { font-size: 12px; color: #6D6A63; margin-bottom: 10px; font-style: italic; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .box { border: 1px solid #ECEAE5; border-radius: 8px; padding: 14px; }
+  .box h3 { margin-top: 0; }
+  footer { margin-top: 36px; border-top: 1px solid #ECEAE5; padding-top: 10px; font-size: 11px; color: #6D6A63; text-align: center; }
+
+  @media print {
+    body { padding: 16px 20px; }
+    h2 { page-break-before: auto; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Demographics Dashboard</h1>
+<div class="subtitle">Olympus Property Management &nbsp;|&nbsp; Source: <span class="code">web_ai.demographics</span> materialized view &nbsp;|&nbsp; Generated: March 2026</div>
+
+<!-- DATA SOURCE -->
+<h2>1. Data Source &amp; Access Control</h2>
+<table>
+  <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td>Django Model</td><td><span class="code">Demographics</span></td></tr>
+    <tr><td>Database View</td><td><span class="code">web_ai.demographics</span> (PostgreSQL materialized view)</td></tr>
+    <tr><td>Access Control</td><td>Row-Level Security (RLS) — users only see their assigned properties</td></tr>
+    <tr><td>URL</td><td><span class="code">/demographics/</span></td></tr>
+    <tr><td>Export URL</td><td><span class="code">/demographics/export/</span> (CSV download)</td></tr>
+  </tbody>
+</table>
+
+<!-- FILTERS -->
+<h2>2. Filters Available</h2>
+<table>
+  <thead><tr><th>Filter</th><th>Type</th><th>Values</th></tr></thead>
+  <tbody>
+    <tr><td>Property</td><td>Multi-select checkbox</td><td>All properties the user has RLS access to</td></tr>
+    <tr><td>Residency Status</td><td>Dropdown</td><td>All Residents / Current Residents / Former Residents</td></tr>
+  </tbody>
+</table>
+
+<!-- KPI SCORECARDS -->
+<h2>3. KPI Scorecards &amp; Formulas</h2>
+<table>
+  <thead><tr><th>#</th><th>Scorecard</th><th>Formula / Query</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>Total Residents</strong></td>
+      <td><span class="code">Demographics.objects.count()</span></td>
+      <td>Filtered by RLS + user-selected filters</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Average Age</strong></td>
+      <td><span class="code">Avg('age')</span></td>
+      <td>Also shows Min and Max age range; nulls excluded</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Avg Annual Income</strong></td>
+      <td><span class="code">Avg('current_employment_estimated_annual_income')</span></td>
+      <td>Nulls excluded; shown in gold color</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Employment Rate</strong></td>
+      <td><span class="code">employed_count / total_residents × 100</span></td>
+      <td>Employed = records where <span class="code">current_employment_name</span> is not null/empty</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Lease Signers</strong></td>
+      <td><span class="code">filter(lease_signer='Yes').count()</span></td>
+      <td>Sub-label shows % of total residents</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Avg Ledger Balance</strong></td>
+      <td><span class="code">Avg('ledger_balance')</span></td>
+      <td>Per resident account; nulls excluded; shown in blue</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- CHARTS -->
+<h2>4. Distribution Charts</h2>
+<table>
+  <thead><tr><th>Chart</th><th>Chart Type</th><th>Data / Buckets</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Age Distribution</strong></td>
+      <td>Bar chart</td>
+      <td>18–25, 26–35, 36–45, 46–55, 56–65, 66+ (count per bucket)</td>
+    </tr>
+    <tr>
+      <td><strong>Gender Distribution</strong></td>
+      <td>Doughnut chart</td>
+      <td>GROUP BY gender with Count()</td>
+    </tr>
+    <tr>
+      <td><strong>Income Distribution</strong></td>
+      <td>Bar chart</td>
+      <td>&lt;30k, 30k–50k, 50k–75k, 75k–100k, 100k+ (count per bracket)</td>
+    </tr>
+    <tr>
+      <td><strong>Marital Status</strong></td>
+      <td>Horizontal bar chart</td>
+      <td>GROUP BY marital_status with Count(), sorted descending</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- MINI KPIs -->
+<h2>5. Mini KPI Sections</h2>
+<div class="two-col">
+  <div class="box">
+    <h3>Resident Types</h3>
+    <table>
+      <thead><tr><th>Label</th><th>Query</th></tr></thead>
+      <tbody>
+        <tr><td>Lease Signers</td><td><span class="code">filter(lease_signer='Yes').count()</span></td></tr>
+        <tr><td>Occupants</td><td><span class="code">filter(occupant='Yes').count()</span></td></tr>
+        <tr><td>Current</td><td><span class="code">lease_level_occupancy_status ILIKE 'Current'</span></td></tr>
+        <tr><td>Former</td><td><span class="code">lease_level_occupancy_status ILIKE 'Former'</span></td></tr>
+      </tbody>
+    </table>
+    <div class="section-note">Each % = count / total_residents × 100</div>
+  </div>
+  <div class="box">
+    <h3>Screening &amp; History Flags</h3>
+    <table>
+      <thead><tr><th>Flag</th><th>Source &amp; Logic</th></tr></thead>
+      <tbody>
+        <tr><td>Criminal History</td><td><span class="code">filter(criminal_history='Yes')</span><br><small>Source: Demographics model</small></td></tr>
+        <tr><td>Eviction History</td><td><span class="code">move_out_reason ILIKE '%evict%'</span><br><small>Source: analytics.fact_lease</small></td></tr>
+        <tr><td>Broken Lease</td><td><span class="code">move_out_reason ILIKE '%skip%' OR '%abandon%'</span><br><small>Source: analytics.fact_lease</small></td></tr>
+        <tr><td>Sued for Rent</td><td><span class="code">move_out_reason ILIKE '%sued%' OR '%non-pay%'</span><br><small>Source: analytics.fact_lease</small></td></tr>
+      </tbody>
+    </table>
+    <div class="section-note">Rate = count / total_residents × 100</div>
+  </div>
+</div>
+
+<!-- ETHNICITY -->
+<h2>6. Ethnicity Distribution Table</h2>
+<p class="section-note">Displayed as a sortable table with progress bars. Formula: <span class="code">count / total_residents × 100</span></p>
+<table>
+  <thead><tr><th>Column</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td>Ethnicity</td><td><span class="code">GROUP BY ethnicity</span> — nulls and empty strings excluded</td></tr>
+    <tr><td>Count</td><td>Count of residents per ethnicity group</td></tr>
+    <tr><td>% Share</td><td><span class="code">count / total_residents × 100</span></td></tr>
+    <tr><td>Visual bar</td><td>Width = % share (CSS progress bar)</td></tr>
+  </tbody>
+</table>
+
+<!-- TOP PROPERTIES -->
+<h2>7. Top Properties by Resident Count</h2>
+<p class="section-note">Bar width = <span class="code">prop.resident_count / top_properties[0].resident_count × 100</span> (relative to highest count property)</p>
+<table>
+  <thead><tr><th>Column</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td>Property Name</td><td>From <span class="code">property_name</span> field</td></tr>
+    <tr><td>Resident Count</td><td>Count of residents per property</td></tr>
+    <tr><td>Visual bar</td><td>Relative to the top property's count</td></tr>
+  </tbody>
+</table>
+
+<!-- RESIDENT DETAIL TABLE -->
+<h2>8. Resident Detail Table</h2>
+<p class="section-note">Limited to first 100 records for performance. Searchable and sortable client-side.</p>
+<table>
+  <thead><tr><th>Column</th><th>Field</th></tr></thead>
+  <tbody>
+    <tr><td>Property</td><td><span class="code">property_name</span></td></tr>
+    <tr><td>Name</td><td><span class="code">first_name + last_name</span></td></tr>
+    <tr><td>Age</td><td><span class="code">age</span> (IntegerField)</td></tr>
+    <tr><td>Gender</td><td><span class="code">gender</span></td></tr>
+    <tr><td>Marital Status</td><td><span class="code">marital_status</span></td></tr>
+    <tr><td>Ethnicity</td><td><span class="code">ethnicity</span></td></tr>
+    <tr><td>Employer</td><td><span class="code">current_employment_name</span></td></tr>
+    <tr><td>Income</td><td><span class="code">current_employment_estimated_annual_income</span> (DecimalField)</td></tr>
+    <tr><td>Status</td><td><span class="code">lease_level_occupancy_status</span> (badge: green=Current, yellow=Former)</td></tr>
+    <tr><td>Type</td><td><span class="code">lease_signer / occupant</span> flags</td></tr>
+    <tr><td>Lease Start</td><td><span class="code">lease_start_date</span></td></tr>
+    <tr><td>Lease End</td><td><span class="code">lease_end_date</span></td></tr>
+    <tr><td>Balance</td><td><span class="code">ledger_balance</span> (DecimalField)</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  Olympus Property Management &nbsp;|&nbsp; Demographics Dashboard Documentation &nbsp;|&nbsp; Confidential
+</footer>
+
+</body>
+</html>

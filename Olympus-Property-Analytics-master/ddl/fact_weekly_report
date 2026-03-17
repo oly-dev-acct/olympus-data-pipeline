@@ -1,0 +1,27 @@
+CREATE TABLE fact_weekly_reports(
+	property_number int NOT NULL,
+	units int NULL,
+	available int NULL,
+	down int NULL,
+	leased int NULL,
+	ntv_status int NULL,
+	occ_prelsd int NULL,
+	preleased_vac_status int NULL,
+	vac int NULL,
+	ready int NULL,
+	first_property_visit int NULL,
+	return_property_visit int NULL,
+	total_property_visits int NULL,
+	leasing_activity_applied int NULL,
+	canceled int NULL,
+	lease_denied int NULL,
+	occupancy_MI int NULL,
+	occupancy_MO int NULL,
+	renewal int NULL,
+	[skip] int NULL,
+	mtm_status int NULL,
+	lease_exp_status int NULL,
+	week_date date NOT NULL
+	PRIMARY KEY(property_number, week_date)
+	FOREIGN KEY (property_number) REFERENCES dim_info_property (entity_id)
+) 

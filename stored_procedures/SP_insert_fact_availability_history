@@ -1,0 +1,191 @@
+CREATE PROCEDURE [dbo].[SP_insert_fact_availability_history]
+AS
+BEGIN
+	SET NOCOUNT ON
+	--Creating temp table to insert all availability stage data
+	CREATE TABLE #availability_stage_temp_table (
+	    site_id_property_unit_number [varchar](70) NOT NULL
+	   ,move_out_date [varchar](20)
+	   ,days_vacant [varchar](15)
+	   ,make_ready_date [varchar](20)
+	   ,date_applied [varchar](20)
+	   ,date_approved [varchar](20)
+	   ,scheduled_move_in [varchar](20)
+	   ,market_addl [varchar](20)
+	   ,curr_last_lease [varchar](20)
+	   ,estimated_vacancy_cost [varchar](20)
+	   ,lease_rent [varchar](20)
+	   ,lease_signed [varchar](5)
+	   ,[name] [varchar](100)
+	   ,comment [varchar](500)
+	   ,[type] [varchar](60)
+	   ,break_or_skip [varchar](10)
+	   ,floor_plan [varchar](20)
+	   PRIMARY KEY (site_id_property_unit_number)
+	)
+
+	INSERT INTO #availability_stage_temp_table (
+		site_id_property_unit_number
+	   ,move_out_date
+	   ,days_vacant
+	   ,make_ready_date
+	   ,date_applied
+	   ,date_approved
+	   ,scheduled_move_in
+	   ,market_addl
+	   ,curr_last_lease
+	   ,estimated_vacancy_cost
+	   ,lease_rent
+	   ,lease_signed
+	   ,[name]
+	   ,comment
+	   ,[type]
+	   ,break_or_skip
+	   ,floor_plan
+	)
+	SELECT DU.site_id_property_unit_number
+	      ,avs.[Move- Out] 
+		  ,avs.[Days Vacant]
+		  ,avs.[Make Ready]
+		  ,avs.[Date Applied]
+		  ,avs.[Date Approved]
+		  ,avs.[Scheduled Move-In]
+		  ,avs.[Market + Addl.] 
+		  ,avs.[Curr/Last Lease Rent]
+		  ,avs.[Estimated Vacancy Cost]
+		  ,avs.[Lease Rent] 
+		  ,avs.[Lease Signed]
+		  ,avs.Name 
+		  ,avs.Comments
+		  ,avs.Type
+		  ,avs.BreakOrSkip
+		  ,aus.[Floor plan]
+	FROM [Olympus_Property_Staging].[dbo].[availability_stage] AS avs
+	LEFT JOIN [Olympus_Property_Staging].[dbo].[all_units_stage] AS aus ON avs.[OnSiteId] = aus.[On Site id] AND avs.[Bldg/ Unit] = aus.[Bldg/Unit]
+	LEFT JOIN [Olympus_Property_Analytics].[dbo].[dim_unit] DU on avs.[OnSiteId]= DU.[onsiteid] and avs.[Bldg/ Unit]=DU.[unit_number]
+
+	--Data Cleaning
+	UPDATE #availability_stage_temp_table
+	SET market_addl= REPLACE(market_addl, ',', '')
+	WHERE market_addl LIKE '%,%'
+
+	UPDATE #availability_stage_temp_table
+	SET curr_last_lease= REPLACE(curr_last_lease, ',', '')
+	WHERE curr_last_lease LIKE '%,%'
+
+	UPDATE #availability_stage_temp_table
+	SET estimated_vacancy_cost= REPLACE(estimated_vacancy_cost, ',', '')
+	WHERE estimated_vacancy_cost LIKE '%,%'
+
+	UPDATE #availability_stage_temp_table
+	SET lease_rent= REPLACE(lease_rent, ',', '')
+	WHERE lease_rent LIKE '%,%'
+
+	UPDATE #availability_stage_temp_table
+	SET days_vacant = NULL 
+	WHERE days_vacant = 'nan'
+
+	UPDATE #availability_stage_temp_table
+	SET days_vacant = LEFT(days_vacant, CHARINDEX('.', days_vacant) - 1)
+	WHERE days_vacant LIKE '%.%'
+
+	UPDATE #availability_stage_temp_table
+	SET days_vacant = NULLIF(days_vacant, '*')
+	WHERE days_vacant LIKE '%*%';
+
+	WITH MaxDates AS (
+	SELECT	site_id_property_unit_number
+		   ,move_out_date
+		   ,days_vacant
+		   ,make_ready_date
+		   ,date_applied
+		   ,date_approved
+		   ,scheduled_move_in
+		   ,market_addl
+		   ,curr_last_lease
+		   ,estimated_vacancy_cost
+		   ,lease_rent
+		   ,lease_signed
+		   ,name
+		   ,comment
+		   ,type
+		   ,break_or_skip
+	FROM (
+		SELECT	h.site_id_property_unit_number
+			   ,h.move_out_date
+			   ,h.days_vacant
+			   ,h.make_ready_date
+			   ,h.date_applied
+			   ,h.date_approved
+			   ,h.scheduled_move_in
+			   ,h.market_addl
+			   ,h.curr_last_lease
+			   ,h.estimated_vacancy_cost
+			   ,h.lease_rent
+			   ,h.lease_signed
+			   ,h.name
+			   ,h.comment
+			   ,h.type
+			   ,h.break_or_skip
+			   ,ROW_NUMBER() OVER(PARTITION BY h.site_id_property_unit_number ORDER BY h.insert_date DESC) AS row_num
+		FROM [Olympus_Property_Analytics].[dbo].[fact_availability_history] AS h
+	) AS sub_que
+	WHERE row_num=1
+	)
+	INSERT INTO [Olympus_Property_Analytics].[dbo].[fact_availability_history] ( 
+						site_id_property_unit_number
+					   ,move_out_date
+					   ,days_vacant
+					   ,make_ready_date
+					   ,date_applied
+					   ,date_approved
+					   ,scheduled_move_in
+					   ,market_addl
+					   ,curr_last_lease
+					   ,estimated_vacancy_cost
+					   ,lease_rent
+					   ,lease_signed
+					   ,name
+					   ,comment
+					   ,type
+					   ,break_or_skip
+			)
+	SELECT CAST(s.site_id_property_unit_number AS varchar(50))
+		  ,CAST(s.move_out_date AS date)
+		  ,CAST(s.days_vacant AS int)
+		  ,CAST(s.make_ready_date AS date)
+		  ,CAST(s.date_applied AS date)
+		  ,CAST(s.date_approved AS date)
+		  ,CAST(s.scheduled_move_in AS date)
+		  ,CAST(s.market_addl AS money)
+		  ,CAST(s.curr_last_lease AS money)
+		  ,CAST(s.estimated_vacancy_cost AS money)
+		  ,CAST(s.lease_rent AS money)
+		  ,CAST(s.lease_signed AS varchar(5))
+		  ,CAST(s.name AS varchar(100))
+		  ,CAST(s.comment AS varchar(500))
+		  ,CAST(s.type AS varchar(60))
+		  ,CAST(s.break_or_skip AS varchar(10))
+	FROM #availability_stage_temp_table AS s
+	EXCEPT
+	SELECT
+		md.site_id_property_unit_number
+	   ,md.move_out_date
+	   ,md.days_vacant
+	   ,md.make_ready_date
+	   ,md.date_applied
+	   ,md.date_approved
+	   ,md.scheduled_move_in
+	   ,md.market_addl
+	   ,md.curr_last_lease
+	   ,md.estimated_vacancy_cost
+	   ,md.lease_rent
+	   ,md.lease_signed
+	   ,md.name
+	   ,md.comment
+	   ,md.type
+	   ,md.break_or_skip
+	FROM MaxDates AS md
+
+	DROP TABLE #availability_stage_temp_table
+END

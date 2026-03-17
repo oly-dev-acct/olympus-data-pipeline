@@ -1,0 +1,33 @@
+import os
+import pandas as pd
+import magic  
+
+def detect_file_type(file_path):
+    """Detects the actual file type using the magic library."""
+    try:
+        file_type = magic.Magic(mime=True).from_file(file_path)
+        return file_type
+    except Exception as e:
+        return f"Could not determine file type: {e}"
+
+def read_excel_files(folder_path, log_file):
+    with open(log_file, "w") as log:
+        for file in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file)
+            file_type = detect_file_type(file_path)
+
+            if file.endswith(('.xlsx', '.xls')):
+                try:
+                    df = pd.read_excel(file_path)
+                    print(f"Successfully read: {file} ({file_type})")
+                except Exception as e:
+                    error_message = f"Error reading {file} ({file_type}): {e}\n"
+                    log.write(error_message)
+                    print(error_message)
+            else:
+                log.write(f"Skipping {file} ({file_type}) - Not an Excel file.\n")
+
+if __name__ == "__main__":
+    folder_path = r"C:\Users\revenuemanagement\OneDrive - Olympus Property\Reports\PowerBIReportsFile\Reports\Home Office Groups - BI Reports"  # Update this with your folder path
+    log_file = r"error_log.txt" 
+    read_excel_files(folder_path, log_file)

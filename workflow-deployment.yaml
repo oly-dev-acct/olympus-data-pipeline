@@ -1,0 +1,47 @@
+###
+### A complete description of a Prefect Deployment for flow 'workflow'
+###
+name: olympus_workflow_tree
+description: null
+version: 3ae77dca5842479584e42ec46c13ee9e
+# The work queue that will handle this deployment's runs
+work_queue_name: olympus_workqueue
+work_pool_name: olympus_workpool
+tags: []
+parameters: {}
+schedule:
+  interval: 86400.0
+  anchor_date: '2023-07-12T12:00:00+00:00'
+  timezone: Asia/Karachi
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: workflow
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 55e2073c-9142-499a-aa9e-e29bf6ee85ed
+  _block_document_name: anonymous-c5795e8a-4472-45b2-9a86-2c9c63c91314
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage: null
+path: C:\Users\revenuemanagement\Documents\Olympus-Property-Analytics\Olympus-Property-Analytics-master
+entrypoint: workflow_tree.py:workflow
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null
+timestamp: '2026-03-17T11:32:08.056145+00:00'
+triggers: []

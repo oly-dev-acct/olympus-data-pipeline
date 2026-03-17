@@ -1,0 +1,362 @@
+CREATE PROCEDURE [dbo].[SP_insert_update_dim_info_property_history]
+AS
+BEGIN
+
+	SET NOCOUNT ON
+	CREATE TABLE #dim_info_property_history_temp_table (
+			[entity_id] varchar(10) NOT NULL,
+			[entity_name] varchar(70) NOT NULL,
+			federal_id varchar(20) NULL,
+			property_name varchar(70) NULL,
+			property_number varchar(10) NULL,
+			[status] [varchar](20) NULL,
+			open_books_from varchar(20) NULL,
+			build_date varchar(30) NULL,
+			acquisition_date varchar(20) NULL,
+			sold_date varchar(20) NULL,
+			tax_id_number varchar(20) NULL,
+			onsiteid varchar(15) NULL,
+			costar_property_number varchar(10) NULL,
+			direct_dial_ext varchar(10) NULL,
+			investor varchar(100) NULL,
+			legal_entity_name varchar(150) NULL,
+			property_email_address varchar(255) NULL,
+			web_address varchar(70) NULL,
+			units varchar(15) NULL,
+			street_address varchar(70) NULL,
+			city varchar(100) NULL,
+			[state] varchar(10) NULL,
+			zip_code varchar(10) NULL,
+			fax varchar(20) NULL,
+			phone varchar(20) NULL,
+			business_manager varchar(100) NULL,
+			bm_email_address varchar(255) NULL,
+			asst_manager varchar(100) NULL,
+			lead_maintenance varchar(100) NULL,
+			regional_director varchar(100) NULL,
+			senior_regional varchar(100) NULL,
+			regional_area_manager varchar(100) NULL,
+			accounts_payable varchar(100) NULL,
+			property_accountant varchar(100) NULL,
+			rmt varchar(20),
+			comments varchar(1000)
+	)
+
+	INSERT INTO #dim_info_property_history_temp_table (
+		[entity_id]
+	   ,[entity_name]
+	   ,federal_id
+	   ,open_books_from
+	   ,[status]
+	   ,property_number
+	   ,property_name
+	   ,acquisition_date
+	   ,sold_date
+	   ,comments
+	   ,accounts_payable
+	   ,asst_manager
+	   ,bm_email_address
+	   ,build_date
+	   ,business_manager
+	   ,city
+	   ,costar_property_number
+	   ,direct_dial_ext
+	   ,fax
+	   ,investor
+	   ,lead_maintenance
+	   ,legal_entity_name
+	   ,onsiteid
+	   ,property_accountant
+	   ,property_email_address
+	   ,regional_director
+	   ,regional_area_manager
+	   ,rmt
+	   ,senior_regional
+	   ,[state]
+	   ,street_address
+	   ,tax_id_number
+	   ,units
+	   ,web_address
+	   ,zip_code
+	   ,phone
+	)
+	SELECT es.[Entity ID]
+		  ,es.[Entity Name]
+		  ,es.[Federal ID]
+		  ,es.[Open books from]
+		  ,es.[Status]
+		  ,PAS.[Property #]
+		  ,PAS.[Property Name]
+		  ,PAS.[Acquisition Date]
+		  ,PAS.[Sold Date]
+		  ,PAS.Comments
+		  ,PIS.[Accounts Payable]
+		  ,PIS.[Asst. Manager]
+		  ,PIS.[BM Email address]
+		  ,PIS.[Build Date]
+		  ,PIS.[Business Manager]
+		  ,PIS.City
+		  ,PIS.[Costar Property Number]
+		  ,PIS.[Direct Dial Ext.]
+		  ,PIS.Fax, PIS.Investor
+		  ,PIS.[Lead Maintenance]
+		  ,PIS.LegalEntityName
+		  ,PIS.OnsiteID
+		  ,PIS.[Property Accountant]
+		  ,PIS.[Property Email Address]
+		  ,PIS.[Regional Director]
+		  ,PIS.[Regional/Area Manager]
+		  ,PIS.RMT
+		  ,PIS.[Senior Regional]
+		  ,PIS.[State]
+		  ,PIS.[Street Address]
+		  ,PIS.[Tax ID #]
+		  ,PIS.Units
+		  ,PIS.[web address]
+		  ,PIS.[Zip Code]
+		  ,PIS.[Phone]
+	FROM entities_stage ES
+	LEFT JOIN property_acquisition_stage PAS ON ES.[Entity ID]=PAS.[Property #] 
+	LEFT JOIN property_info_stage PIS ON PAS.[Property #] = PIS.[Property #]
+
+	--Cleaning temp table 
+
+	UPDATE #dim_info_property_history_temp_table
+	SET [entity_id] = REPLACE([entity_id], '.', '')
+	WHERE [entity_id] LIKE '%.%'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET costar_property_number = REPLACE(costar_property_number, '.', '')
+	WHERE costar_property_number LIKE '%.%'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET [entity_id] = '-1'
+	WHERE [entity_id] = 'TCABP'
+
+	DELETE FROM #dim_info_property_history_temp_table
+	WHERE NOT ISNUMERIC([entity_id]) = 1
+
+	UPDATE #dim_info_property_history_temp_table
+	SET sold_date = NULLIF(sold_date, 'NaT')
+	WHERE sold_date = 'NaT'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET costar_property_number = NULLIF(costar_property_number, 'None')
+	WHERE costar_property_number = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET comments = NULLIF(comments, 'None')
+	WHERE comments = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET federal_id = NULLIF(federal_id, 'None')
+	WHERE federal_id = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET investor = NULLIF(investor, 'None')
+	WHERE investor = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET lead_maintenance = NULLIF(lead_maintenance, 'None')
+	WHERE lead_maintenance = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET regional_director = NULLIF(regional_director, 'None')
+	WHERE regional_director = 'None'
+
+	UPDATE #dim_info_property_history_temp_table
+	SET fax = NULLIF(fax, 'None')
+	WHERE fax = 'None';
+
+	--PART TWO for rows that exist
+	WITH MaxDates AS (
+	SELECT 		 [entity_id]
+				,[entity_name] 
+				,federal_id
+				,property_name
+				,open_books_from
+				,property_number
+				,build_date
+				,acquisition_date
+				,sold_date
+				,tax_id_number
+				,onsiteid
+				,costar_property_number
+				,direct_dial_ext
+				,investor
+				,legal_entity_name
+				,property_email_address
+				,web_address
+				,units
+				,street_address
+				,city
+				,[state]
+				,zip_code
+				,fax
+				,phone
+				,business_manager
+				,bm_email_address
+				,asst_manager
+				,lead_maintenance
+				,regional_director
+				,senior_regional
+				,regional_area_manager
+				,accounts_payable
+				,property_accountant
+				,rmt
+				,comments
+	FROM (
+		SELECT 	 h.[entity_id]
+				,h.[entity_name] 
+				,h.federal_id
+				,h.property_name
+				,h.open_books_from
+				,h.property_number
+				,h.build_date
+				,h.acquisition_date
+				,h.sold_date
+				,h.tax_id_number
+				,h.onsiteid
+				,h.costar_property_number
+				,h.direct_dial_ext
+				,h.investor
+				,h.legal_entity_name
+				,h.property_email_address
+				,h.web_address
+				,h.units
+				,h.street_address
+				,h.city
+				,h.[state]
+				,h.zip_code
+				,h.fax
+				,h.phone
+				,h.business_manager
+				,h.bm_email_address
+				,h.asst_manager
+				,h.lead_maintenance
+				,h.regional_director
+				,h.senior_regional
+				,h.regional_area_manager
+				,h.accounts_payable
+				,h.property_accountant
+				,h.rmt
+				,h.comments
+				,ROW_NUMBER() OVER(PARTITION BY h.[entity_id] ORDER BY insert_date DESC) AS row_num
+		FROM [Olympus_Property_Analytics].[dbo].[dim_info_property_history] AS h
+	) AS sub_que
+	WHERE row_num = 1
+	)
+	INSERT INTO [Olympus_Property_Analytics].[dbo].[dim_info_property_history] (
+	             [entity_id]
+				,[entity_name] 
+				,federal_id
+				,property_name
+				,open_books_from
+				,property_number
+				,build_date
+				,acquisition_date
+				,sold_date
+				,tax_id_number
+				,onsiteid
+				,costar_property_number
+				,direct_dial_ext
+				,investor
+				,legal_entity_name
+				,property_email_address
+				,web_address
+				,units
+				,street_address
+				,city
+				,[state]
+				,zip_code
+				,fax
+				,phone
+				,business_manager
+				,bm_email_address
+				,asst_manager
+				,lead_maintenance
+				,regional_director
+				,senior_regional
+				,regional_area_manager
+				,accounts_payable
+				,property_accountant
+				,rmt
+				,comments
+		)
+	SELECT       t.[entity_id]
+				,t.[entity_name] 
+				,t.federal_id
+				,t.property_name
+				,t.open_books_from
+				,t.property_number
+				,t.build_date
+				,t.acquisition_date
+				,t.sold_date
+				,t.tax_id_number
+				,t.onsiteid
+				,t.costar_property_number
+				,t.direct_dial_ext
+				,t.investor
+				,t.legal_entity_name
+				,t.property_email_address
+				,t.web_address
+				,t.units
+				,t.street_address
+				,t.city
+				,t.[state]
+				,t.zip_code
+				,t.fax
+				,t.phone
+				,t.business_manager
+				,t.bm_email_address
+				,t.asst_manager
+				,t.lead_maintenance
+				,t.regional_director
+				,t.senior_regional
+				,t.regional_area_manager
+				,t.accounts_payable
+				,t.property_accountant
+				,t.rmt
+				,t.comments
+	FROM #dim_info_property_history_temp_table AS t
+	EXCEPT
+	SELECT       md.[entity_id]
+				,md.[entity_name] 
+				,md.federal_id
+				,md.property_name
+				,md.open_books_from
+				,md.property_number
+				,md.build_date
+				,md.acquisition_date
+				,md.sold_date
+				,md.tax_id_number
+				,md.onsiteid
+				,md.costar_property_number
+				,md.direct_dial_ext
+				,md.investor
+				,md.legal_entity_name
+				,md.property_email_address
+				,md.web_address
+				,md.units
+				,md.street_address
+				,md.city
+				,md.[state]
+				,md.zip_code
+				,md.fax
+				,md.phone
+				,md.business_manager
+				,md.bm_email_address
+				,md.asst_manager
+				,md.lead_maintenance
+				,md.regional_director
+				,md.senior_regional
+				,md.regional_area_manager
+				,md.accounts_payable
+				,md.property_accountant
+				,md.rmt
+				,md.comments
+	FROM MaxDates AS md
+
+    -- Clean up the temporary table
+    DROP TABLE #dim_info_property_history_temp_table;
+END

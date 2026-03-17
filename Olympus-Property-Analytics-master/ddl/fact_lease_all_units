@@ -1,0 +1,37 @@
+USE [Olympus_Property_Analytics]
+GO
+
+/****** Object:  Table [dbo].[fact_lease_all_units]    Script Date: 6/21/2023 5:58:52 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[fact_lease_all_units](
+	[site_id_property_unit_number] [varchar](50) NOT NULL,
+	[market_rent] [money] NULL,
+	[amt_per_sqft] [money] NULL,
+	[lease_rent] [money] NULL,
+	[actual_amt_per_sqft] [money] NULL,
+	[name] [varchar](200) NULL,
+	[move_in] [date] NULL,
+	[lease_start] [date] NULL,
+	[lease_end] [date] NULL,
+	[deposits_on_hand] [money] NULL,
+	[made_ready] [varchar](10) NULL,
+	[effective_rent] [money] NULL,
+	[insert_date] [datetime] NULL,
+	[modified_date] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[site_id_property_unit_number] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[fact_lease_all_units]  WITH CHECK ADD FOREIGN KEY([site_id_property_unit_number])
+REFERENCES [dbo].[dim_unit] ([site_id_property_unit_number])
+GO
+
+

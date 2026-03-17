@@ -1,0 +1,285 @@
+CREATE PROCEDURE [dbo].[SP_insert_fact_weekly_reports]
+AS
+BEGIN
+	SET NOCOUNT ON
+	CREATE TABLE #temp_table ( 
+		   [Property] varchar(255) 
+		  ,[Units] int 
+		  ,[Available] int 
+		  ,[Down] int 
+		  ,[Leased] int
+		  ,[NTV Status] int 
+		  ,[Occ Prelsd] int 
+		  ,[Preleased Vac Status] int 
+		  ,[Vac] int 
+		  ,[Ready] int
+		  ,[1st Property Visit] int 
+		  ,[Return Property Visit] int 
+		  ,[Total Property Visits] int 
+		  ,[Leasing Activity Applied] int
+		  ,[Canceled] int
+		  ,[Lease Denied] int
+		  ,[Occupancy MI] int
+		  ,[Occupancy MO] int
+		  ,[Renewal] int
+		  ,[Skip] int
+		  ,[MTM Status] int
+		  ,[Lease Exp Status] int
+		  ,[WeekDate] date
+		  ,[Property #] int
+	)
+
+	INSERT INTO #temp_table (
+					[Property]
+				   ,[Units]
+				   ,[Available]
+				   ,[Down]
+				   ,[Leased]
+				   ,[NTV Status]
+				   ,[Occ Prelsd]
+				   ,[Preleased Vac Status]
+				   ,[Vac]
+				   ,[Ready]
+				   ,[1st Property Visit]
+				   ,[Return Property Visit]
+				   ,[Total Property Visits]
+				   ,[Leasing Activity Applied]
+				   ,[Canceled]
+				   ,[Lease Denied]
+				   ,[Occupancy MI]
+				   ,[Occupancy MO]
+				   ,[Renewal]
+				   ,[Skip]
+				   ,[MTM Status]
+				   ,[Lease Exp Status]
+				   ,[WeekDate])
+	SELECT DISTINCT [Property] 
+				   ,[Units] 
+				   ,[Available] 
+				   ,[Down] 
+				   ,[Leased] 
+				   ,[NTV Status]
+		           ,[Occ Prelsd] 
+				   ,[Preleased Vac Status] 
+				   ,[Vac] 
+				   ,[Ready] 
+				   ,[1st Property Visit]
+				   ,[Return Property Visit] 
+				   ,[Total Property Visits] 
+				   ,[Leasing Activity Applied]
+				   ,[Canceled] 
+				   ,[Lease Denied] 
+				   ,[Occupancy MI] 
+				   ,[Occupancy MO] 
+				   ,[Renewal]
+				   ,[Skip] 
+				   ,[MTM Status] 
+				   ,[Lease Exp Status] 
+				   ,[WeekDate]
+	FROM [Olympus_Property_Staging].[dbo].[weekly_reports_stage]
+
+	UPDATE #temp_table
+	SET Property = SUBSTRING(Property, CHARINDEX('-', Property) + 1, LEN(Property))
+	WHERE Property LIKE '%Historical-%'
+
+	UPDATE t
+	SET t.[Property #] = COALESCE(ps.property_number, ps.[entity_id])
+	FROM #temp_table AS t
+	LEFT JOIN [Olympus_Property_Analytics].[dbo].[dim_info_property] AS ps ON t.[Property] = ps.property_name
+
+	UPDATE t
+	SET t.[Property #] = COALESCE(ps.property_number, ps.[entity_id])
+	FROM #temp_table AS t
+	LEFT JOIN [Olympus_Property_Analytics].[dbo].[dim_info_property] AS ps ON t.[Property] = ps.[entity_name]
+
+
+	CREATE TABLE #temp_null_id ( 
+		 [Property] varchar(255) 
+		,[Units] int 
+		,[Available] int 
+		,[Down] int 
+		,[Leased] int
+		,[NTV Status] int 
+		,[Occ Prelsd] int 
+		,[Preleased Vac Status] int 
+		,[Vac] int 
+		,[Ready] int
+		,[1st Property Visit] int 
+		,[Return Property Visit] int 
+		,[Total Property Visits] int 
+		,[Leasing Activity Applied] int
+		,[Canceled] int
+		,[Lease Denied] int
+		,[Occupancy MI] int
+		,[Occupancy MO] int
+		,[Renewal] int
+		,[Skip] int
+		,[MTM Status] int
+		,[Lease Exp Status] int
+		,[WeekDate] date
+		,[Property #] int
+	)
+
+	INSERT INTO #temp_null_id (
+					[Property]
+				   ,[Units]
+				   ,[Available]
+				   ,[Down]
+				   ,[Leased]
+				   ,[NTV Status]
+				   ,[Occ Prelsd]
+				   ,[Preleased Vac Status]
+				   ,[Vac]
+				   ,[Ready]
+				   ,[1st Property Visit]
+				   ,[Return Property Visit]
+				   ,[Total Property Visits]
+				   ,[Leasing Activity Applied]
+				   ,[Canceled]
+				   ,[Lease Denied]
+				   ,[Occupancy MI]
+				   ,[Occupancy MO]
+				   ,[Renewal]
+				   ,[Skip]
+				   ,[MTM Status]
+				   ,[Lease Exp Status]
+				   ,[WeekDate])
+	        SELECT  [Property] 
+				   ,[Units] 
+				   ,[Available] 
+				   ,[Down] 
+				   ,[Leased] 
+				   ,[NTV Status]
+		           ,[Occ Prelsd] 
+				   ,[Preleased Vac Status] 
+				   ,[Vac] 
+				   ,[Ready] 
+				   ,[1st Property Visit]
+				   ,[Return Property Visit] 
+				   ,[Total Property Visits] 
+				   ,[Leasing Activity Applied]
+				   ,[Canceled] 
+				   ,[Lease Denied] 
+				   ,[Occupancy MI] 
+				   ,[Occupancy MO] 
+				   ,[Renewal]
+				   ,[Skip] 
+				   ,[MTM Status] 
+				   ,[Lease Exp Status] 
+				   ,[WeekDate]
+	FROM #temp_table
+	WHERE [Property #] IS NULL
+
+	DELETE FROM #temp_table
+	WHERE [Property #] IS NULL
+
+	INSERT INTO #temp_table (
+					[Property]
+				   ,[Units]
+				   ,[Available]
+				   ,[Down]
+				   ,[Leased]
+				   ,[NTV Status]
+				   ,[Occ Prelsd]
+				   ,[Preleased Vac Status]
+				   ,[Vac]
+				   ,[Ready]
+				   ,[1st Property Visit]
+				   ,[Return Property Visit]
+				   ,[Total Property Visits]
+				   ,[Leasing Activity Applied]
+				   ,[Canceled]
+				   ,[Lease Denied]
+				   ,[Occupancy MI]
+				   ,[Occupancy MO]
+				   ,[Renewal]
+				   ,[Skip]
+				   ,[MTM Status]
+				   ,[Lease Exp Status]
+				   ,[WeekDate]
+				   ,[Property #] 
+	)
+	SELECT tni.[Property]
+	      ,tni.[Units]
+		  ,tni.[Available]
+		  ,tni.[Down]
+		  ,tni.[Leased]
+		  ,tni.[NTV Status]
+		  ,tni.[Occ Prelsd]
+		  ,tni.[Preleased Vac Status]
+		  ,tni.[Vac]
+		  ,tni.[Ready]
+		  ,tni.[1st Property Visit]
+		  ,tni.[Return Property Visit]
+		  ,tni.[Total Property Visits]
+		  ,tni.[Leasing Activity Applied]
+		  ,tni.[Canceled]
+		  ,tni.[Lease Denied]
+		  ,tni.[Occupancy MI]
+		  ,tni.[Occupancy MO]
+		  ,tni.[Renewal]
+		  ,tni.[Skip]
+		  ,tni.[MTM Status]
+		  ,tni.[Lease Exp Status]
+		  ,tni.[WeekDate]
+		  ,ms.propertyId
+	FROM #temp_null_id AS tni
+	LEFT JOIN [Olympus_Property_Staging].[dbo].[mapping_stage] AS ms ON tni.Property = ms.[property_name]
+
+	DELETE FROM [Olympus_Property_Analytics].[dbo].[fact_weekly_reports]
+	WHERE week_date IN (SELECT [WeekDate] FROM #temp_table) AND property_number IN (SELECT [Property #] FROM #temp_table)
+
+	INSERT INTO [Olympus_Property_Analytics].[dbo].[fact_weekly_reports] ( 	
+			 property_number
+			,units
+			,available
+			,down
+			,leased
+			,ntv_status
+			,occ_prelsd
+			,preleased_vac_status
+			,vac
+			,ready
+			,first_property_visit
+			,return_property_visit
+			,total_property_visits
+			,leasing_activity_applied
+			,canceled
+			,lease_denied
+			,occupancy_MI
+			,occupancy_MO
+			,renewal
+			,[skip]
+			,mtm_status
+			,lease_exp_status
+			,week_date
+	)
+	SELECT [Property #]
+	      ,[Units]
+		  ,[Available]
+		  ,[Down]
+		  ,[Leased]
+		  ,[NTV Status]
+		  ,[Occ Prelsd]
+		  ,[Preleased Vac Status]
+		  ,[Vac]
+		  ,[Ready]
+		  ,[1st Property Visit]
+		  ,[Return Property Visit]
+		  ,[Total Property Visits]
+		  ,[Leasing Activity Applied]
+		  ,[Canceled]
+		  ,[Lease Denied]
+		  ,[Occupancy MI]
+		  ,[Occupancy MO]
+		  ,[Renewal]
+		  ,[Skip]
+		  ,[MTM Status]
+		  ,[Lease Exp Status]
+		  ,[WeekDate]
+	FROM #temp_table
+
+
+	DROP TABLE #temp_table
+	DROP TABLE #temp_null_id
+END

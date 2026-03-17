@@ -1,0 +1,421 @@
+USE [Olympus_Property_Staging]
+GO
+/****** Object:  StoredProcedure [dbo].[SP_insert_update_Dim_info_property]    Script Date: 6/20/2023 1:00:59 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[SP_insert_update_Dim_info_property]
+AS
+BEGIN
+	SET NOCOUNT ON
+
+
+		
+
+
+	--Creating temp table #temporary_table_dim_property
+
+
+
+		create table #temporary_table_dim_property(
+				[Entity ID] [varchar](50)
+				,[Entity Name] [varchar](70)
+				,[Federal ID] [varchar](30)
+				,[Open books from] [varchar](15)
+				,[Status] [varchar](20)
+				,[Property #] [varchar](50)
+				,[Property Name] [varchar](70)
+				,[Acquisition Date] [varchar](20)
+				,[Sold Date] [varchar](20)
+				,[Comments] [varchar](1000)
+				,[Asst. Manager] [varchar](50)
+				,[Accounts Payable] [varchar](50)
+				,[BM Email address] [varchar](255)
+				,[Build Date] [varchar](20)
+				,[Business Manager] [varchar](200)
+				,City [varchar](50)
+				,[Costar Property Number] [varchar](50)
+				,[Direct Dial Ext.] [varchar](10)
+				,[Fax] [varchar](20)
+				,Investor [varchar](50)
+				,[Lead Maintenance] [varchar](50)
+				,LegalEntityName [varchar](150)
+				,OnsiteID [varchar](20)
+				,[Property Accountant] [varchar](50)
+				,[Property Email Address] [varchar](255)
+				,[Regional Director] [varchar](50)
+				,[Regional/Area Manager] [varchar](50)
+				,RMT [varchar](20)
+				,[Senior Regional] [varchar](50)
+				,[State] [varchar](10)
+				,[Street Address] [varchar](70)
+				,[Tax ID #] [varchar](30)
+				,Units [varchar](10)
+				,[web address] [varchar](70)
+				,[Zip Code] [varchar](30)
+				,[Phone] [varchar](20)
+				)
+				
+					insert into #temporary_table_dim_property(
+					   [Entity ID]
+					  ,[Entity Name]
+					  ,[Federal ID]
+					  ,[Open books from]
+					  ,[Status]
+					  ,[Property #]
+					  ,[Property Name]
+					  ,[Acquisition Date]
+					  ,[Sold Date]
+					  ,[Comments]
+					  ,[Accounts Payable]
+					  ,[Asst. Manager]
+					  ,[BM Email address]
+					  ,[Build Date]
+					  ,[Business Manager]
+					  ,[City]
+					  ,[Costar Property Number]
+					  ,[Direct Dial Ext.]
+					  ,[Fax]
+					  ,[Investor]
+					  ,[Lead Maintenance]
+					  ,[LegalEntityName]
+					  ,[OnsiteID]
+					  ,[Property Accountant]
+					  ,[Property Email Address]
+					  ,[Regional Director]
+					  ,[Regional/Area Manager]
+					  ,[RMT]
+					  ,[Senior Regional]
+					  ,[State]
+					  ,[Street Address]
+					  ,[Tax ID #]
+					  ,[Units]
+					  ,[web address]
+					  ,[Zip Code]
+					  ,[Phone])
+					SELECT 
+					es.[Entity ID]
+					, es.[Entity Name]
+					, es.[Federal ID]
+					, es.[Open books from]
+					, es.[Status]
+					, PAS.[Property #]
+					, PAS.[Property Name]
+					, PAS.[Acquisition Date]
+					, PAS.[Sold Date]
+					, PAS.Comments
+					, PIS.[Accounts Payable]
+					, PIS.[Asst. Manager]
+					, PIS.[BM Email address]
+					, PIS.[Build Date]
+					, PIS.[Business Manager]
+					, PIS.City
+					, PIS.[Costar Property Number]
+					, PIS.[Direct Dial Ext.]
+					, PIS.Fax
+					, PIS.Investor
+					, PIS.[Lead Maintenance]
+					, PIS.LegalEntityName
+					, PIS.OnsiteID
+					, PIS.[Property Accountant]
+					, PIS.[Property Email Address]
+					, PIS.[Regional Director]
+					, PIS.[Regional/Area Manager]
+					, PIS.RMT
+					, PIS.[Senior Regional]
+					, PIS.[State]
+					, PIS.[Street Address]
+					, PIS.[Tax ID #]
+					, PIS.Units
+					, PIS.[web address]
+					, PIS.[Zip Code]
+					, PIS.[Phone]
+                FROM entities_stage ES
+				LEFT JOIN property_acquisition_stage PAS ON ES.[Entity ID]=PAS.[Property #] 
+				LEFT JOIN property_info_stage PIS ON PAS.[Property #] = PIS.[Property #]
+			
+
+	--Cleaning temptable 
+
+			UPDATE #temporary_table_dim_property
+				SET [Entity ID] = REPLACE([Entity ID], '.', '')
+				WHERE [Entity ID] LIKE '%.%'
+
+				UPDATE #temporary_table_dim_property
+				SET [Costar Property Number] = REPLACE([Costar Property Number], '.', '')
+				WHERE [Costar Property Number] LIKE '%.%'
+
+				UPDATE #temporary_table_dim_property
+				SET [Entity ID] = '-1'
+				WHERE [Entity ID] = 'TCABP'
+
+				DELETE FROM #temporary_table_dim_property
+				WHERE NOT ISNUMERIC([Entity ID]) = 1
+
+				UPDATE #temporary_table_dim_property
+				SET [Sold Date] = NULLIF([Sold Date], 'NaT')
+				WHERE [Sold Date] = 'NaT'
+
+				UPDATE #temporary_table_dim_property
+				SET [Costar Property Number] = NULLIF([Costar Property Number], 'None')
+				WHERE [Costar Property Number] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Comments] = NULLIF([Comments], 'None')
+				WHERE [Comments] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Federal ID] = NULLIF([Federal ID], 'None')
+				WHERE [Federal ID] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Investor] = NULLIF([Investor], 'None')
+				WHERE [Investor] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Lead Maintenance] = NULLIF([Lead Maintenance], 'None')
+				WHERE [Lead Maintenance] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Regional Director] = NULLIF([Regional Director], 'None')
+				WHERE [Regional Director] = 'None'
+
+				UPDATE #temporary_table_dim_property
+				SET [Fax] = NULLIF([Fax], 'None')
+				WHERE [Fax] = 'None'
+
+    -- Merge data from the temporary table into the target table using checksum
+    MERGE INTO [Olympus_Property_Analytics].[dbo].[dim_info_property] AS target
+    USING (
+        SELECT CAST([Entity ID] AS int) AS [Entity ID]
+			,  CAST([Entity Name] AS [varchar](70)) AS  [Entity Name]
+			,  CAST([Federal ID] AS [varchar](20)) as [Federal ID] 
+			,  CAST ([Status] AS [varchar](20)) as [Status]
+			, CAST ([Open books from] AS DATE ) AS [Open books from]
+			, CAST([Property Name] AS [varchar](70)) as [Property Name]
+			, CAST([Property #] AS INT) as [Property #] 
+			, CAST([Build Date] AS [varchar](20)) as [Build Date]
+			, CAST([Acquisition Date] AS DATE) as [Acquisition Date]
+			, CAST([Sold Date] AS DATE) as [Sold Date]
+			, CAST([Tax ID #] AS [varchar](20)) as [Tax ID #]
+			, CAST([OnsiteID] AS INT) as [OnsiteID]
+			, CAST([Costar Property Number] AS INT) as [Costar Property Number]
+			, CAST([Direct Dial Ext.] AS [varchar](10)) as [Direct Dial Ext.]
+			, CAST([Investor] AS [varchar](100)) as [Investor] 
+			, CAST([LegalEntityName] AS [varchar](150)) as [LegalEntityName]
+			, CAST([Property Email Address] AS [varchar](255)) as [Property Email Address]
+			, CAST([web address] AS [varchar](70)) as [web address]
+			, CAST([Units] AS INT) as [Units] 
+			, CAST([Street Address] AS [varchar](70)) as [Street Address]
+			, CAST([City] AS [VARCHAR](100)) as [City]
+			, CAST([State] AS [VARCHAR](10)) as [State]
+			, CAST([Zip Code] AS INT) as [Zip Code]
+			, CAST([Fax] AS [VARCHAR](20)) as [Fax]
+			, CAST([Phone] AS [varchar](20)) as [Phone] 
+			, CAST([Business Manager] AS [varchar](100)) as [Business Manager]
+			, CAST([BM Email address] AS [varchar](255)) as [BM Email address]
+			, CAST([Asst. Manager]AS [varchar](100)) as [Asst. Manager]
+			, CAST([Lead Maintenance] AS [varchar](100)) as [Lead Maintenance]
+			, CAST([Regional Director] AS [varchar](100)) as [Regional Director]
+			, CAST([Senior Regional] AS [varchar](100)) as [Senior Regional] 
+			, CAST ([Regional/Area Manager] AS [varchar](100)) as [Regional/Area Manager] 
+			, CAST( [Accounts Payable] AS [varchar](100)) as [Accounts Payable] 
+			, CAST ([Property Accountant] AS [varchar](100) ) as [Property Accountant]
+			, CAST ([RMT] AS [varchar](20)) as [RMT]
+			, CAST ([Comments] AS [varchar](1000) ) as [Comments]
+        FROM #temporary_table_dim_property
+    ) AS source ON target.[entity_id] = source.[Entity ID]
+    WHEN MATCHED
+        -- Update row if checksum indicates changes
+      AND (CHECKSUM( 
+						 
+						 target.[entity_name]
+						,target.[status]
+						,target.[open_books_from]
+						,target.[federal_id]
+						,target.[property_name]
+						,target.[property_number]
+						,target.[build_year]
+						,target.[acquisition_date]
+						,target.[sold_date]
+						,target.[tax_id_number]
+						,target.[onsiteiD]
+						,target.[costar_property_number]
+						,target.[direct_dial_ext]
+						,target.[investor]
+						,target.[legal_entity_name]
+						,target.[property_email_address]
+						,target.[web_address]
+						,target.[units]
+						,target.[street_address]
+						,target.[city]
+						,target.[state]
+						,target.[zip_code]
+						,target.[fax]
+						,target.[phone]
+						,target.[business_manager]
+						,target.[bm_Email_address]
+						,target.[asst_manager]
+						,target.[lead_maintenance]
+						,target.[regional_director]
+						,target.[senior_regional]
+						,target.[regional_area_manager]
+						,target.[accounts_payable]
+						,target.[property_accountant]
+						,target.[rmt]
+						,target.[comments]) <> CHECKSUM(
+								source.[Entity Name]
+								, source.[Status]
+								, source.[Open books from]
+								, source.[Federal ID]
+								, source.[Property Name]
+								, source.[Property #]
+								, source.[Build Date]
+							    , source.[Acquisition Date]
+								, source.[Sold Date]
+								, source.[Tax ID #]
+								, source.[OnsiteID]
+								, source.[Costar Property Number]
+								, source.[Direct Dial Ext.]
+								, source.[Investor]
+								, source.[LegalEntityName]
+								, source.[Property Email Address]
+								, source.[web address]
+								, source.[Units]
+								, source.[Street Address]
+								, source.[City]
+								, source.[State]
+								, source.[Zip Code]
+								, source.[Fax]
+								, source.[Phone]
+								, source.[Business Manager]
+								, source.[BM Email address]
+								, source.[Asst. Manager]
+								, source.[Lead Maintenance]
+								, source.[Regional Director]
+								, source.[Senior Regional]
+								, source.[Regional/Area Manager]
+								, source.[Accounts Payable]
+								, source.[Property Accountant]
+								, source.[RMT]
+								, source.[Comments])) 
+        THEN
+            UPDATE SET target.[entity_name] = source.[Entity Name]
+					,target.[status] = source.[Status]
+					,target.[open_books_from] =source.[Open books from]
+                      , target.[federal_id] = source.[Federal ID]
+                       ,target.[property_name] = source.[Property Name]
+                       ,target.[property_number] = source.[Property #]
+                       ,target.[build_year] = source.[Build Date]
+                       ,target.[acquisition_date] = source.[Acquisition Date]
+                       ,target.[sold_date] = source.[Sold Date]
+                       ,target.[tax_id_number] = source.[Tax ID #]
+                       ,target.[onsiteiD] = source.[OnsiteID]
+                       ,target.[costar_property_number] = source.[Costar Property Number]
+                       ,target.[direct_dial_ext] = source.[Direct Dial Ext.]
+                       ,target.[investor] = source.[Investor]
+                       ,target.[legal_entity_name] = source.[LegalEntityName]
+                       ,target.[property_email_address] = source.[Property Email Address]
+                       ,target.[web_address] = source.[web address]
+                       ,target.[units] = source.[Units]
+                       ,target.[street_address] = source.[Street Address]
+                       ,target.[city] = source.[City]
+                       ,target.[state] = source.[State]
+                       ,target.[zip_code] = source.[Zip Code]
+                       ,target.[fax] = source.[Fax]
+                       ,target.[phone] = source.[Phone]
+                       ,target.[business_manager] = source.[Business Manager]
+                       ,target.[bm_Email_address] = source.[BM Email address]
+                       ,target.[asst_manager] = source.[Asst. Manager]
+                       ,target.[lead_maintenance] = source.[Lead Maintenance]
+                       ,target.[regional_director] = source.[Regional Director]
+                       ,target.[senior_regional] = source.[Senior Regional]
+                       ,target.[regional_area_manager] = source.[Regional/Area Manager]
+                       ,target.[accounts_payable] = source.[Accounts Payable]
+                       ,target.[property_accountant] = source.[Property Accountant]
+                       ,target.[rmt] = source.[RMT]
+                       ,target.[comments] = source.[Comments]
+					   ,target.[modified_date] = GETDATE()
+    WHEN NOT MATCHED BY TARGET
+        -- Insert row if it doesn't exist in the target table
+        THEN INSERT ( [entity_id]
+      ,[entity_name]
+      ,[status]
+      ,[open_books_from]
+      ,[federal_id]
+      ,[property_name]
+      ,[property_number]
+      ,[build_year]
+      ,[acquisition_date]
+      ,[sold_date]
+      ,[tax_id_number]
+      ,[onsiteiD]
+      ,[costar_property_number]
+      ,[direct_dial_ext]
+      ,[investor]
+      ,[legal_entity_name]
+      ,[property_email_address]
+      ,[web_address]
+      ,[units]
+      ,[street_address]
+      ,[city]
+      ,[state]
+      ,[zip_code]
+      ,[fax]
+      ,[phone]
+      ,[business_manager]
+      ,[bm_Email_address]
+      ,[asst_manager]
+      ,[lead_maintenance]
+      ,[regional_director]
+      ,[senior_regional]
+      ,[regional_area_manager]
+      ,[accounts_payable]
+      ,[property_accountant]
+      ,[rmt]
+      ,[comments]
+      ,[insert_date]
+      ,[modified_date])
+             VALUES ([Entity ID]
+					,source.[Entity Name]
+					, source.[Status]
+					, source.[Open books from]
+					, source.[Federal ID]
+					, source.[Property Name]
+					, source.[Property #]
+					, source.[Build Date]
+					, source.[Acquisition Date]
+					, source.[Sold Date]
+					, source.[Tax ID #]
+					, source.[OnsiteID]
+					, source.[Costar Property Number]
+					, source.[Direct Dial Ext.]
+					, source.[Investor]
+					, source.[LegalEntityName]
+					, source.[Property Email Address]
+					, source.[web address]
+					, source.[Units]
+					, source.[Street Address]
+					, source.[City]
+					, source.[State]
+					, source.[Zip Code]
+					, source.[Fax]
+					, source.[Phone]
+					, source.[Business Manager]
+					, source.[BM Email address]
+					, source.[Asst. Manager]
+					, source.[Lead Maintenance]
+					, source.[Regional Director]
+					, source.[Senior Regional]
+					, source.[Regional/Area Manager]
+					, source.[Accounts Payable]
+					, source.[Property Accountant]
+					, source.[RMT]
+					, source.[Comments]
+					,GETDATE()
+					,GETDATE()) ;
+
+    -- Clean up the temporary table
+    DROP TABLE #temporary_table_dim_property;
+END

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Olympus Property — Database Data Model</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #f5f6fa; }
+  h1 { font-size: 26px; color: #fff; }
+  h2 { font-size: 18px; color: #1a1a2e; margin: 28px 0 10px; border-left: 5px solid #4361ee; padding-left: 10px; }
+  h3 { font-size: 14px; color: #fff; margin: 0; }
+  p  { margin: 6px 0; line-height: 1.6; }
+
+  /* HEADER */
+  .header { background: linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+            color:#fff; padding:32px 40px 24px; }
+  .header-meta { display:flex; gap:30px; margin-top:14px; flex-wrap:wrap; }
+  .meta-item { background:rgba(255,255,255,.1); border-radius:6px; padding:8px 16px; }
+  .meta-item strong { display:block; font-size:10px; opacity:.7; text-transform:uppercase; letter-spacing:1px; }
+  .meta-item span { font-size:14px; font-weight:600; }
+
+  /* LAYOUT */
+  .container { max-width: 1300px; margin: 0 auto; padding: 30px 30px 60px; }
+
+  /* STAT CARDS */
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin:20px 0; }
+  .stat-card { background:#fff; border-radius:10px; padding:16px; text-align:center;
+               box-shadow:0 2px 8px rgba(0,0,0,.08); border-top:4px solid; }
+  .stat-card.blue   { border-color:#4361ee; }
+  .stat-card.green  { border-color:#2ec4b6; }
+  .stat-card.orange { border-color:#ff9f1c; }
+  .stat-card.purple { border-color:#9b5de5; }
+  .stat-card.red    { border-color:#e63946; }
+  .stat-card .num   { font-size:30px; font-weight:700; }
+  .stat-card .lbl   { font-size:11px; color:#666; margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
+
+  /* SCHEMA BADGE */
+  .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px;
+           font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+  .badge.analytics { background:#e8eeff; color:#4361ee; }
+  .badge.staging   { background:#e8fdf8; color:#2ec4b6; }
+  .badge.web_ai    { background:#fdf0e8; color:#ff6b35; }
+  .badge.etl       { background:#fce8e8; color:#e63946; }
+  .badge.pk        { background:#fff3cd; color:#856404; font-size:10px; }
+  .badge.fk        { background:#d4edda; color:#155724; font-size:10px; }
+
+  /* ERD */
+  .erd-container { background:#fff; border-radius:12px; padding:24px;
+                   box-shadow:0 2px 8px rgba(0,0,0,.08); margin:20px 0; overflow-x:auto; }
+  .erd-row { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+  .erd-box { border:2px solid; border-radius:8px; min-width:200px; font-size:12px;
+             flex:1; min-width:180px; max-width:260px; }
+  .erd-box.dim    { border-color:#4361ee; }
+  .erd-box.fact   { border-color:#2ec4b6; }
+  .erd-box.date   { border-color:#ff9f1c; }
+  .erd-box.kpi    { border-color:#9b5de5; }
+  .erd-title { padding:8px 12px; font-weight:700; font-size:12px; }
+  .erd-title.dim  { background:#e8eeff; color:#4361ee; }
+  .erd-title.fact { background:#e8fdf8; color:#1a8a7e; }
+  .erd-title.date { background:#fff3cd; color:#856404; }
+  .erd-title.kpi  { background:#f3e8ff; color:#7b2fbe; }
+  .erd-col { padding:3px 12px; border-top:1px solid #eee; }
+  .erd-col.pk { background:#fffbf0; font-weight:600; color:#856404; }
+  .erd-col.fk { color:#155724; font-style:italic; }
+  .erd-col.key{ color:#333; }
+
+  /* RELATIONSHIP TABLE */
+  .rel-table { width:100%; border-collapse:collapse; margin:14px 0; }
+  .rel-table th { background:#1a1a2e; color:#fff; padding:10px 14px; text-align:left; font-size:12px; }
+  .rel-table td { padding:9px 14px; border-bottom:1px solid #eef; font-size:12px; }
+  .rel-table tr:nth-child(even) td { background:#f9faff; }
+  .rel-table tr:hover td { background:#eef2ff; }
+  code { background:#f0f4ff; color:#4361ee; padding:1px 6px; border-radius:4px; font-size:11px; font-family:monospace; }
+
+  /* SCHEMA SECTION */
+  .schema-section { margin:24px 0; }
+  .schema-header { background: linear-gradient(90deg,#1a1a2e,#16213e);
+                   color:#fff; padding:12px 20px; border-radius:8px 8px 0 0;
+                   display:flex; align-items:center; justify-content:space-between; }
+  .schema-body { background:#fff; border:1px solid #e0e4f0; border-top:none;
+                 border-radius:0 0 8px 8px; padding:0; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+
+  /* TABLE CARD */
+  .table-card { border-bottom:1px solid #f0f2ff; }
+  .table-card:last-child { border-bottom:none; }
+  .table-name { background:#f8f9ff; padding:10px 20px; font-weight:700; font-size:13px;
+                cursor:pointer; display:flex; align-items:center; gap:8px;
+                border-left:4px solid #4361ee; }
+  .table-name.fact-border { border-left-color:#2ec4b6; }
+  .table-name.staging-border { border-left-color:#ff9f1c; }
+  .table-name.kpi-border { border-left-color:#9b5de5; }
+  .table-desc { color:#555; font-size:11px; font-weight:400; margin-left:auto; max-width:400px; text-align:right; }
+  .col-table { width:100%; border-collapse:collapse; font-size:11.5px; }
+  .col-table th { background:#f0f4ff; color:#333; padding:7px 14px; text-align:left; font-weight:600; }
+  .col-table td { padding:6px 14px; border-bottom:1px solid #f5f5f5; }
+  .col-table tr:hover td { background:#fafbff; }
+  .type-tag { color:#888; font-style:italic; font-size:11px; }
+  .constraint { font-size:10px; font-weight:700; }
+  .constraint.pk { color:#856404; }
+  .constraint.fk { color:#155724; }
+  .constraint.nn { color:#e63946; }
+
+  /* LEGEND */
+  .legend { display:flex; gap:20px; flex-wrap:wrap; margin:14px 0; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:12px; }
+  .legend-dot { width:14px; height:14px; border-radius:3px; }
+
+  /* FLOW DIAGRAM */
+  .flow { display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:20px 0; }
+  .flow-box { background:#1a1a2e; color:#fff; padding:10px 18px; border-radius:8px;
+              text-align:center; font-size:12px; font-weight:600; min-width:140px; }
+  .flow-box.stg { background:#2ec4b6; }
+  .flow-box.dim { background:#4361ee; }
+  .flow-box.fact{ background:#9b5de5; }
+  .flow-arrow { font-size:20px; color:#999; padding:0 6px; }
+
+  .note { background:#fff8e1; border-left:4px solid #ff9f1c; padding:10px 16px;
+          border-radius:0 6px 6px 0; font-size:12px; color:#5a4a00; margin:10px 0; }
+  .section-intro { background:#f0f4ff; border-radius:8px; padding:14px 18px;
+                   font-size:12.5px; color:#333; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════  HEADER  ═══════════════════════ -->
+<div class="header">
+  <h1>Olympus Property Analytics — Database Data Model</h1>
+  <p style="opacity:.8;margin-top:6px;">PostgreSQL dimensional data warehouse — complete schema reference</p>
+  <div class="header-meta">
+    <div class="meta-item"><strong>Database</strong><span>Olympus_Property</span></div>
+    <div class="meta-item"><strong>Engine</strong><span>PostgreSQL 17.5</span></div>
+    <div class="meta-item"><strong>Dump Date</strong><span>2026-03-11</span></div>
+    <div class="meta-item"><strong>Schemas</strong><span>analytics · staging · web_ai · etl_alerts</span></div>
+    <div class="meta-item"><strong>Document Date</strong><span>March 2026</span></div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════  SUMMARY STATS  ═══════════════ -->
+<h2>1. Database At-a-Glance</h2>
+<div class="stat-grid">
+  <div class="stat-card blue">  <div class="num">4</div>   <div class="lbl">Schemas</div></div>
+  <div class="stat-card green"> <div class="num">13</div>  <div class="lbl">Dimension Tables</div></div>
+  <div class="stat-card purple"><div class="num">38</div>  <div class="lbl">Fact Tables</div></div>
+  <div class="stat-card orange"><div class="num">47</div>  <div class="lbl">Staging Tables</div></div>
+  <div class="stat-card red">   <div class="num">1</div>   <div class="lbl">Date Dimension</div></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4361ee"></div> analytics (DWH)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2ec4b6"></div> staging (ETL Landing)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff6b35"></div> web_ai (App Layer)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e63946"></div> etl_alerts (Monitoring)</div>
+</div>
+
+<!-- ═══════════════  ARCHITECTURE  ═══════════════ -->
+<h2>2. Architecture Overview</h2>
+<div class="erd-container">
+  <p style="font-weight:700;margin-bottom:14px;color:#333;">Data Flow: Source Files → Staging → Analytics (Dimensional DWH) → BI / Web App</p>
+  <div class="flow">
+    <div class="flow-box">Source Files<br><small style="font-weight:400;opacity:.8">CSV/Excel/XML</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box stg">staging schema<br><small style="font-weight:400;opacity:.8">47 _stage tables</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box dim">analytics: Dimensions<br><small style="font-weight:400;opacity:.8">dim_unit · dim_info_property · …</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box fact">analytics: Facts<br><small style="font-weight:400;opacity:.8">38 fact_* tables</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="background:#e63946;">Power BI / web_ai<br><small style="font-weight:400;opacity:.8">Dashboards & APIs</small></div>
+  </div>
+  <div class="note">The <strong>analytics</strong> schema is the authoritative dimensional data warehouse. Stored procedures (SPs) transform staging data into dimension and fact tables. The <strong>web_ai</strong> schema holds Django ORM tables for the web application.</div>
+</div>
+
+<!-- ═══════════════  CORE ENTITY RELATIONSHIPS  ═══════════════ -->
+<h2>3. Core Entity Relationship Diagram (analytics schema)</h2>
+<div class="erd-container">
+
+  <!-- CENTRAL KEY: site_id_property_unit_number -->
+  <p style="font-size:12px;color:#555;margin-bottom:12px;">
+    <strong>Primary join key:</strong> <code>site_id_property_unit_number</code> — composite surrogate key of format <em>OnSiteID-PropertyNumber-UnitNumber</em> used across all fact tables.<br>
+    <strong>Secondary keys:</strong> <code>property_number</code> / <code>onsiteid</code> (property-level joins), <code>category_id</code> (finance), <code>datekey</code> / <code>fulldatealternatekey</code> (time).
+  </p>
+
+  <p style="font-weight:700;color:#4361ee;margin-bottom:8px;">▶ DIMENSIONS</p>
+  <div class="erd-row">
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_info_property</div>
+      <div class="erd-col pk">🔑 entity_id (PK)</div>
+      <div class="erd-col key">property_number</div>
+      <div class="erd-col key">onsiteid</div>
+      <div class="erd-col key">property_name</div>
+      <div class="erd-col key">status, city, state</div>
+      <div class="erd-col key">acquisition_date, sold_date</div>
+      <div class="erd-col key">units, build_year</div>
+      <div class="erd-col key">business_manager, regional_director</div>
+      <div class="erd-col key">investor, legal_entity_name</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_unit</div>
+      <div class="erd-col pk">🔑 site_id_property_unit_number (PK)</div>
+      <div class="erd-col fk">↗ onsiteid → dim_info_property</div>
+      <div class="erd-col fk">↗ property_number → dim_info_property</div>
+      <div class="erd-col key">unit_number, floor_plan</div>
+      <div class="erd-col key">sqft, number_of_bedrooms</div>
+      <div class="erd-col key">number_of_bathrooms, floor_level</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_resident_demographics</div>
+      <div class="erd-col pk">🔑 resident_id (PK)</div>
+      <div class="erd-col fk">↗ onsiteid → dim_info_property</div>
+      <div class="erd-col key">name, gender, age, birth_date</div>
+      <div class="erd-col key">marital_status, citizenship</div>
+      <div class="erd-col key">income, miles_to_work</div>
+      <div class="erd-col key">household_status, resident_status</div>
+    </div>
+
+    <div class="erd-box date">
+      <div class="erd-title date">analytics.dimdate</div>
+      <div class="erd-col pk">🔑 datekey (PK)</div>
+      <div class="erd-col key">fulldatealternatekey (date)</div>
+      <div class="erd-col key">daynameofweek, monthname</div>
+      <div class="erd-col key">weeknumberofyear</div>
+      <div class="erd-col key">calendaryear, calendarquarter</div>
+      <div class="erd-col key">fiscalyear, fiscalquarter</div>
+      <div class="erd-col key">startdateofmonth, enddateofmonth</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_income_budget_category</div>
+      <div class="erd-col pk">🔑 category_id (PK)</div>
+      <div class="erd-col key">category_name, category_code</div>
+      <div class="erd-col key">parent_category_name</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_requests_new</div>
+      <div class="erd-col pk">🔑 request_number (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col key">category, item, issue</div>
+      <div class="erd-col key">status_new, priority</div>
+      <div class="erd-col key">submitted / completed datetime</div>
+      <div class="erd-col key">days_open, work_group</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_unit_amenties_hist</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number</div>
+      <div class="erd-col key">floorplan, unit, building</div>
+      <div class="erd-col key">amenity_level, Amenity, Type</div>
+      <div class="erd-col key">value, is_current_amenties</div>
+    </div>
+
+    <div class="erd-box dim">
+      <div class="erd-title dim">analytics.dim_contact_level_details</div>
+      <div class="erd-col pk">🔑 resident_member_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number</div>
+      <div class="erd-col key">first/middle/last_name, email</div>
+      <div class="erd-col key">age, gender, ethnicity</div>
+      <div class="erd-col key">employment, income details</div>
+      <div class="erd-col key">screening decision / history</div>
+      <div class="erd-col key">previous residence / employer</div>
+    </div>
+
+  </div>
+
+  <p style="font-weight:700;color:#1a8a7e;margin-bottom:8px;margin-top:16px;">▶ CORE FACT TABLES (Unit & Lease)</p>
+  <div class="erd-row">
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_lease</div>
+      <div class="erd-col pk">🔑 lease_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">lease_start_date, lease_end_date</div>
+      <div class="erd-col key">lease_rent, market_plus_addl</div>
+      <div class="erd-col key">move_in_date, moved_out_date</div>
+      <div class="erd-col key">renewal_start/end_date</div>
+      <div class="erd-col key">occupancy_status, floor_plan</div>
+      <div class="erd-col key">reason_for_leasing / renewal</div>
+      <div class="erd-col key">is_current_lease</div>
+    </div>
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_lease_all_units</div>
+      <div class="erd-col pk">🔑 site_id_property_unit_number (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">market_rent, lease_rent</div>
+      <div class="erd-col key">effective_rent, amt_per_sqft</div>
+      <div class="erd-col key">move_in, lease_start/end</div>
+      <div class="erd-col key">vacancy_default, made_ready</div>
+    </div>
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_lease_expiration_renewal</div>
+      <div class="erd-col pk">🔑 lease_exp_re_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">actual_rent, lease_end_date</div>
+      <div class="erd-col key">decision, new_lease_term</div>
+      <div class="erd-col key">new_rent, new_lease_start/end</div>
+      <div class="erd-col key">last_increase, last_increase_amount</div>
+    </div>
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_availability_history</div>
+      <div class="erd-col pk">🔑 availability_history_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">type, is_available</div>
+      <div class="erd-col key">move_out_date, make_ready_date</div>
+      <div class="erd-col key">days_vacant, condition</div>
+      <div class="erd-col key">lease_rent, market_addl</div>
+      <div class="erd-col key">scheduled_move_in</div>
+    </div>
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_turnover_history</div>
+      <div class="erd-col pk">🔑 turnover_history_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">move_out_date, move_in_date</div>
+      <div class="erd-col key">turnover_days</div>
+      <div class="erd-col key">number_of_make_ready_days</div>
+      <div class="erd-col key">is_current_turn</div>
+    </div>
+
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_pending_renewals_history</div>
+      <div class="erd-col pk">🔑 pending_renewals_history_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">lease_start/end, move_in_date</div>
+      <div class="erd-col key">lease_rent, new_lease_rent</div>
+      <div class="erd-col key">renewal_status, term</div>
+    </div>
+
+  </div>
+
+  <p style="font-weight:700;color:#1a8a7e;margin-bottom:8px;margin-top:16px;">▶ FINANCIAL FACTS</p>
+  <div class="erd-row">
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_income_statement</div>
+      <div class="erd-col fk">↗ propertyID → dim_info_property</div>
+      <div class="erd-col fk">↗ category_id → dim_income_budget_category</div>
+      <div class="erd-col key">month_end_date (FK → dimdate)</div>
+      <div class="erd-col key">category_value (money)</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_budget_statement</div>
+      <div class="erd-col fk">↗ propertyID → dim_info_property</div>
+      <div class="erd-col fk">↗ category_id → dim_income_budget_category</div>
+      <div class="erd-col key">month_end_date (FK → dimdate)</div>
+      <div class="erd-col key">category_value (money)</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_delinquent_history</div>
+      <div class="erd-col pk">🔑 delinquent_history_id (PK)</div>
+      <div class="erd-col fk">↗ site_id_property_unit_number → dim_unit</div>
+      <div class="erd-col key">total_delinquent, total_prepaid</div>
+      <div class="erd-col key">net_balance, 30/60/90_days buckets</div>
+      <div class="erd-col key">fiscal_period, fiscal_as_of</div>
+      <div class="erd-col key">name, phone, email</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_bi_banner_report</div>
+      <div class="erd-col fk">↗ property_code → dim_info_property</div>
+      <div class="erd-col key">project_id, project_name, gl_code</div>
+      <div class="erd-col key">budget, paid_to_date, spend</div>
+      <div class="erd-col key">capital_type, status</div>
+    </div>
+  </div>
+
+  <p style="font-weight:700;color:#1a8a7e;margin-bottom:8px;margin-top:16px;">▶ ENGAGEMENT & REPUTATION FACTS</p>
+  <div class="erd-row">
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_soci_details_snapshot</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col key">snapshot_date</div>
+      <div class="erd-col key">avg_review_rating (overall)</div>
+      <div class="erd-col key">Google / Yelp / Facebook ratings</div>
+      <div class="erd-col key">Apartments.com / ApartmentGuide</div>
+      <div class="erd-col key">unresponded_reviews counts</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_soci_review_feed_details</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col pk">🔑 review_id (PK)</div>
+      <div class="erd-col key">site (Yelp/Google/etc.)</div>
+      <div class="erd-col key">author, rating, review text</div>
+      <div class="erd-col key">response, response_timestamp</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_knock_activity_feed_stage</div>
+      <div class="erd-col fk">↗ OnesiteID → dim_info_property</div>
+      <div class="erd-col key">StartDate / EndDate</div>
+      <div class="erd-col key">Leads, Prospects, Visits</div>
+      <div class="erd-col key">Applications, Leases</div>
+      <div class="erd-col key">Call, Email, Text, Facebook</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_knock_conversion_feed_stage</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col key">SnapShotDate</div>
+      <div class="erd-col key">lead, Prospect, Visits, Lease</div>
+      <div class="erd-col key">Prospect_Visit_%, Visit_Lease_%</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_ellis_kpi_feed_stage_weekly</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col key">weekstartdate, weekenddate</div>
+      <div class="erd-col key">loyalty_score, customer_service</div>
+      <div class="erd-col key">maintenance_satisfaction</div>
+      <div class="erd-col key">community_sentiment, perceived_value</div>
+    </div>
+    <div class="erd-box fact">
+      <div class="erd-title fact">analytics.fact_weekly_rent_grata_report</div>
+      <div class="erd-col fk">↗ onesiteid → dim_info_property</div>
+      <div class="erd-col key">start_date / end_date</div>
+      <div class="erd-col key">prospect_reward, resident_reward</div>
+      <div class="erd-col key">move_in_count, cost_per_move_in</div>
+    </div>
+  </div>
+
+  <p style="font-weight:700;color:#7b2fbe;margin-bottom:8px;margin-top:16px;">▶ ANALYTICS / KPI SUMMARY TABLES</p>
+  <div class="erd-row">
+    <div class="erd-box kpi">
+      <div class="erd-title kpi">analytics.olympus_lease_trend_analysis</div>
+      <div class="erd-col fk">↗ property_number → dim_info_property</div>
+      <div class="erd-col key">date (FK → dimdate)</div>
+      <div class="erd-col key">total_units, occupied_units</div>
+      <div class="erd-col key">percentage_occupacy</div>
+      <div class="erd-col key">total_move_ins, total_move_outs</div>
+      <div class="erd-col key">effective_rent, market_rent</div>
+      <div class="erd-col key">NTV, MTM, make_ready, down</div>
+      <div class="erd-col key">expiring current/next/month_after</div>
+    </div>
+    <div class="erd-box kpi">
+      <div class="erd-title kpi">analytics.olympus_lease_kpis_trend_monthly</div>
+      <div class="erd-col fk">↗ property_number → dim_info_property</div>
+      <div class="erd-col key">EndDateOfMonth (FK → dimdate)</div>
+      <div class="erd-col key">exposure, delinquency</div>
+      <div class="erd-col key">renewel_conversion, expirations</div>
+      <div class="erd-col key">average_turn_time</div>
+      <div class="erd-col key">service_request count</div>
+      <div class="erd-col key">income current/last/prev month</div>
+    </div>
+    <div class="erd-box kpi">
+      <div class="erd-title kpi">analytics.fact_weekly_report</div>
+      <div class="erd-col fk">↗ property_number → dim_info_property</div>
+      <div class="erd-col key">week_date (FK → dimdate)</div>
+      <div class="erd-col key">units, available, leased, down</div>
+      <div class="erd-col key">ntv_status, mtm_status</div>
+      <div class="erd-col key">occ_prelsd, preleased_vac_status</div>
+      <div class="erd-col key">total_property_visits</div>
+      <div class="erd-col key">renewal, skip, move_in/out</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════  RELATIONSHIP MATRIX  ═══════════════ -->
+<h2>4. Table Relationship Matrix</h2>
+<div class="section-intro">All relationships in this warehouse are <strong>logical</strong> (no FK constraints enforced in DDL), enforced through stored procedure join logic.</div>
+<table class="rel-table">
+  <tr>
+    <th>Fact / Analytic Table</th>
+    <th>Join Key(s)</th>
+    <th>Linked Dimension(s)</th>
+    <th>Relationship Type</th>
+  </tr>
+  <tr><td>fact_lease</td><td><code>site_id_property_unit_number</code></td><td>dim_unit, dim_info_property (via unit)</td><td>Many-to-One</td></tr>
+  <tr><td>fact_lease_all_units</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>One-to-One (current snapshot)</td></tr>
+  <tr><td>fact_lease_expiration_renewal</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_availability_history</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One (append-only history)</td></tr>
+  <tr><td>fact_turnover_history</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_delinquent_history</td><td><code>site_id_property_unit_number</code>, <code>onsiteid</code></td><td>dim_unit, dim_info_property</td><td>Many-to-One</td></tr>
+  <tr><td>fact_pending_renewals_history</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_income_statement</td><td><code>propertyID</code>, <code>category_id</code>, <code>month_end_date</code></td><td>dim_info_property, dim_income_budget_category, dimdate</td><td>Many-to-Many grain</td></tr>
+  <tr><td>fact_budget_statement</td><td><code>propertyID</code>, <code>category_id</code>, <code>month_end_date</code></td><td>dim_info_property, dim_income_budget_category, dimdate</td><td>Many-to-Many grain</td></tr>
+  <tr><td>fact_lease_report</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_lease_trade_out_report</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_unit_type_market_rates</td><td><code>propertyID</code>, <code>rent_effective_date</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_unit_turn_capx_report</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_unit_turn_rehab_report</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_unit_turn_standard_report</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_unit_renewel_offer_analysis</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+  <tr><td>fact_soci_details_snapshot</td><td><code>onesiteid</code>, <code>snapshot_date</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_soci_review_feed_details</td><td><code>onesiteid</code></td><td>dim_info_property</td><td>Many-to-One</td></tr>
+  <tr><td>fact_knock_activity_feed_stage</td><td><code>OnesiteID</code>, <code>StartDate</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_knock_conversion_feed_stage</td><td><code>onesiteid</code>, <code>SnapShotDate</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_knock_engagement_feed</td><td><code>OnesiteID</code>, <code>StartDate</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_bi_ellis_loyality_feed_stage_weekly</td><td><code>onesiteid</code>, <code>weekstartdate</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_ellis_kpi_feed_stage_weekly</td><td><code>onesiteid</code>, <code>weekstartdate</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_weekly_rent_grata_report</td><td><code>onesiteid</code>, <code>start_date</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>fact_rent_grata_unpaid_rewards</td><td><code>onesiteid</code></td><td>dim_info_property</td><td>Many-to-One</td></tr>
+  <tr><td>fact_weekly_report</td><td><code>property_number</code>, <code>week_date</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>olympus_lease_trend_analysis</td><td><code>property_number</code>, <code>date</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>olympus_lease_kpis_trend_monthly</td><td><code>property_number</code>, <code>EndDateOfMonth</code></td><td>dim_info_property, dimdate</td><td>Many-to-One</td></tr>
+  <tr><td>dim_requests / dim_requests_new</td><td><code>site_id_property_unit_number</code>, <code>onsiteid</code></td><td>dim_unit, dim_info_property</td><td>Many-to-One</td></tr>
+  <tr><td>fact_bi_banner_report</td><td><code>property_code</code></td><td>dim_info_property</td><td>Many-to-One</td></tr>
+  <tr><td>dim_contact_level_details</td><td><code>site_id_property_unit_number</code></td><td>dim_unit</td><td>Many-to-One</td></tr>
+</table>
+
+<!-- ═══════════════  ANALYTICS SCHEMA — DIMENSIONS  ═══════════════ -->
+<h2>5. analytics Schema — Dimension Tables</h2>
+
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>DIMENSION TABLES &nbsp;<span class="badge analytics">analytics</span></h3>
+    <span style="font-size:12px;opacity:.8">Core reference / slowly-changing-dimension tables</span>
+  </div>
+  <div class="schema-body">
+
+    <!-- dim_info_property -->
+    <div class="table-card">
+      <div class="table-name"><span class="badge analytics">DIM</span> dim_info_property
+        <span class="table-desc">Master property reference — one row per property entity</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Data Type</th><th>Constraint</th><th>Description</th></tr>
+        <tr><td>entity_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Primary key — unique property entity identifier</td></tr>
+        <tr><td>property_number</td><td class="type-tag">integer</td><td></td><td>Operational property number (joins most fact tables)</td></tr>
+        <tr><td>onsiteid</td><td class="type-tag">integer</td><td></td><td>OneSite (Ellis PMS) property ID — FK used by Knock/Ellis/SOCI data</td></tr>
+        <tr><td>property_name</td><td class="type-tag">varchar(70)</td><td></td><td>Display name of the property</td></tr>
+        <tr><td>entity_name</td><td class="type-tag">varchar(70)</td><td></td><td>Legal/corporate entity name</td></tr>
+        <tr><td>status</td><td class="type-tag">varchar(20)</td><td></td><td>Active / Inactive / Sold</td></tr>
+        <tr><td>acquisition_date</td><td class="type-tag">date</td><td></td><td>Date property was acquired by Olympus</td></tr>
+        <tr><td>sold_date</td><td class="type-tag">date</td><td></td><td>Date property was sold (null if still owned)</td></tr>
+        <tr><td>units</td><td class="type-tag">integer</td><td></td><td>Total unit count at the property</td></tr>
+        <tr><td>build_year</td><td class="type-tag">varchar(20)</td><td></td><td>Year property was built</td></tr>
+        <tr><td>street_address, city, state, zip_code</td><td class="type-tag">varchar / int</td><td></td><td>Physical location</td></tr>
+        <tr><td>investor, legal_entity_name</td><td class="type-tag">varchar</td><td></td><td>Ownership structure details</td></tr>
+        <tr><td>business_manager, asst_manager</td><td class="type-tag">varchar(100)</td><td></td><td>On-site management staff</td></tr>
+        <tr><td>regional_director, senior_regional, regional_area_manager</td><td class="type-tag">varchar(100)</td><td></td><td>Regional reporting chain</td></tr>
+        <tr><td>insert_date, modified_date</td><td class="type-tag">timestamp</td><td></td><td>Audit timestamps</td></tr>
+        <tr><td>yardi_id</td><td class="type-tag">integer</td><td></td><td>Cross-reference to Yardi system</td></tr>
+      </table>
+    </div>
+
+    <!-- dim_unit -->
+    <div class="table-card">
+      <div class="table-name"><span class="badge analytics">DIM</span> dim_unit
+        <span class="table-desc">Unit inventory — one row per physical apartment unit</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Data Type</th><th>Constraint</th><th>Description</th></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td><span class="constraint pk">PK</span></td><td>Composite surrogate key — OnSiteID-PropertyNumber-Unit (global FK for all fact tables)</td></tr>
+        <tr><td>onsiteid</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→property</span></td><td>Ellis property identifier</td></tr>
+        <tr><td>property_number</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→property</span></td><td>Links to dim_info_property.property_number</td></tr>
+        <tr><td>property_name</td><td class="type-tag">varchar(70)</td><td></td><td>Property display name</td></tr>
+        <tr><td>unit_number</td><td class="type-tag">varchar(30)</td><td></td><td>Unit identifier within property</td></tr>
+        <tr><td>floor_plan</td><td class="type-tag">varchar(30)</td><td></td><td>Floor plan type code (e.g. 1BR, 2BR-A)</td></tr>
+        <tr><td>number_of_bedrooms</td><td class="type-tag">double precision</td><td></td><td>Bedroom count</td></tr>
+        <tr><td>number_of_bathrooms</td><td class="type-tag">double precision</td><td></td><td>Bathroom count</td></tr>
+        <tr><td>sqft</td><td class="type-tag">integer</td><td></td><td>Unit square footage</td></tr>
+        <tr><td>floor_level</td><td class="type-tag">varchar(5)</td><td></td><td>Floor level within building</td></tr>
+        <tr><td>unit_map_ids</td><td class="type-tag">integer</td><td></td><td>Cross-reference mapping ID</td></tr>
+      </table>
+    </div>
+
+    <!-- dim_resident_demographics -->
+    <div class="table-card">
+      <div class="table-name"><span class="badge analytics">DIM</span> dim_resident_demographics
+        <span class="table-desc">Resident profile and demographic attributes</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Data Type</th><th>Constraint</th><th>Description</th></tr>
+        <tr><td>resident_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Resident identifier</td></tr>
+        <tr><td>onsiteid</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→property</span></td><td>Links to property</td></tr>
+        <tr><td>name</td><td class="type-tag">varchar(200)</td><td></td><td>Full resident name</td></tr>
+        <tr><td>gender, marital_status</td><td class="type-tag">varchar</td><td></td><td>Demographic attributes</td></tr>
+        <tr><td>citizenship_ethnic_origin</td><td class="type-tag">varchar(70)</td><td></td><td>Citizenship / ethnicity</td></tr>
+        <tr><td>age, birth_date</td><td class="type-tag">int / date</td><td></td><td>Age information</td></tr>
+        <tr><td>income</td><td class="type-tag">money</td><td></td><td>Annual income</td></tr>
+        <tr><td>miles_to_work</td><td class="type-tag">double precision</td><td></td><td>Commute distance</td></tr>
+        <tr><td>resident_status, household_status</td><td class="type-tag">varchar</td><td></td><td>Occupancy relationship status</td></tr>
+        <tr><td>employer, job_type</td><td class="type-tag">varchar(50)</td><td></td><td>Employment information</td></tr>
+      </table>
+    </div>
+
+    <!-- dimdate -->
+    <div class="table-card">
+      <div class="table-name"><span class="badge analytics">DIM</span> dimdate
+        <span class="table-desc">Date dimension — standard calendar and fiscal attributes</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Data Type</th><th>Constraint</th><th>Description</th></tr>
+        <tr><td>datekey</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Integer date key (YYYYMMDD format)</td></tr>
+        <tr><td>fulldatealternatekey</td><td class="type-tag">date</td><td></td><td>Actual date — used as FK in most fact joins</td></tr>
+        <tr><td>daynameofweek, daynumberofweek</td><td class="type-tag">varchar / int</td><td></td><td>Day of week info</td></tr>
+        <tr><td>monthnumberofyear, monthname</td><td class="type-tag">int / varchar</td><td></td><td>Month attributes</td></tr>
+        <tr><td>weeknumberofyear</td><td class="type-tag">integer</td><td></td><td>ISO week number</td></tr>
+        <tr><td>calendaryear, calendarquarter, calendarsemester</td><td class="type-tag">smallint / int</td><td></td><td>Calendar year hierarchy</td></tr>
+        <tr><td>fiscalyear, fiscalquarter, fiscalsemester</td><td class="type-tag">smallint / int</td><td></td><td>Fiscal year hierarchy</td></tr>
+        <tr><td>startdateofmonth, enddateofmonth</td><td class="type-tag">date</td><td></td><td>Month boundaries</td></tr>
+      </table>
+    </div>
+
+    <!-- dim_income_budget_category -->
+    <div class="table-card">
+      <div class="table-name"><span class="badge analytics">DIM</span> dim_income_budget_category
+        <span class="table-desc">Financial category hierarchy for income & budget classification</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Data Type</th><th>Constraint</th><th>Description</th></tr>
+        <tr><td>category_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Surrogate key for GL category</td></tr>
+        <tr><td>category_name</td><td class="type-tag">varchar(255)</td><td></td><td>GL account / category name</td></tr>
+        <tr><td>category_code</td><td class="type-tag">integer</td><td></td><td>Source GL code</td></tr>
+        <tr><td>parent_category_name</td><td class="type-tag">varchar(255)</td><td></td><td>Parent roll-up category (e.g. Revenue, Expenses)</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════  ANALYTICS SCHEMA — FACT TABLES  ═══════════════ -->
+<h2>6. analytics Schema — Core Fact Tables</h2>
+
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>LEASING & UNIT FACTS &nbsp;<span class="badge analytics">analytics</span></h3>
+  </div>
+  <div class="schema-body">
+
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_lease
+        <span class="table-desc">Complete lease lifecycle — from application to move-out</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>lease_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Unique lease identifier from Ellis PMS</td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td><span class="constraint fk">FK→dim_unit</span></td><td>Unit composite key</td></tr>
+        <tr><td>household_id_Resh_id</td><td class="type-tag">integer</td><td></td><td>Resident/household identifier</td></tr>
+        <tr><td>lease_start_date / lease_end_date</td><td class="type-tag">date</td><td><span class="constraint nn">NN</span></td><td>Lease term dates</td></tr>
+        <tr><td>move_in_date / moved_out_date</td><td class="type-tag">date</td><td></td><td>Actual occupancy dates</td></tr>
+        <tr><td>lease_rent / market_plus_addl</td><td class="type-tag">money</td><td></td><td>Contracted rent vs. market rate</td></tr>
+        <tr><td>lease_rent_variance / lease_total_variance</td><td class="type-tag">numeric(10,4)</td><td></td><td>Rent-to-market variance</td></tr>
+        <tr><td>occupancy_status</td><td class="type-tag">varchar(40)</td><td></td><td>Current occupancy state</td></tr>
+        <tr><td>renewal_start_date / renewal_end_date</td><td class="type-tag">date</td><td></td><td>Renewal term if applicable</td></tr>
+        <tr><td>reason_for_leasing / reason_for_renewal</td><td class="type-tag">varchar</td><td></td><td>Leasing motivation codes</td></tr>
+        <tr><td>move_out_reason</td><td class="type-tag">varchar(120)</td><td></td><td>Reason for move-out (eviction, voluntary, etc.)</td></tr>
+        <tr><td>1st_advertising_source</td><td class="type-tag">varchar(512)</td><td></td><td>Lead source attribution</td></tr>
+        <tr><td>is_current_lease</td><td class="type-tag">integer</td><td></td><td>Flag: 1 = current active lease</td></tr>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_availability_history
+        <span class="table-desc">Unit availability status — append-only historical record</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>availability_history_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Surrogate key</td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td><span class="constraint fk">FK→dim_unit</span></td><td></td></tr>
+        <tr><td>type</td><td class="type-tag">varchar(60)</td><td></td><td>'Vacant Not Leased Not Ready', 'Vacant Leased Ready', 'Model', 'Down', etc.</td></tr>
+        <tr><td>is_available</td><td class="type-tag">smallint</td><td></td><td>1 = available, 0 = occupied</td></tr>
+        <tr><td>days_vacant</td><td class="type-tag">integer</td><td></td><td>Cumulative vacant days</td></tr>
+        <tr><td>move_out_date / make_ready_date</td><td class="type-tag">date</td><td></td><td>Turnover timeline</td></tr>
+        <tr><td>scheduled_move_in</td><td class="type-tag">date</td><td></td><td>Preleased move-in date</td></tr>
+        <tr><td>lease_rent / market_addl</td><td class="type-tag">money</td><td></td><td>Pricing at time of snapshot</td></tr>
+        <tr><td>condition</td><td class="type-tag">varchar(20)</td><td></td><td>Unit condition (Make Ready, etc.)</td></tr>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_delinquent_history
+        <span class="table-desc">Accounts receivable aging — delinquency and prepaid balances</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>delinquent_history_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td></td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td><span class="constraint fk">FK→dim_unit</span></td><td></td></tr>
+        <tr><td>total_delinquent / total_prepaid / net_balance</td><td class="type-tag">money</td><td></td><td>Balance summary</td></tr>
+        <tr><td>current / 30_days / 60_days / 90_plus_days</td><td class="type-tag">money</td><td></td><td>Aging buckets</td></tr>
+        <tr><td>deposits_held / outstanding_deposit</td><td class="type-tag">money</td><td></td><td>Security deposit tracking</td></tr>
+        <tr><td>fiscal_period / fiscal_as_of</td><td class="type-tag">citext / timestamp</td><td></td><td>Fiscal reporting period</td></tr>
+        <tr><td>delinquency_comment / comment_date</td><td class="type-tag">varchar / timestamp</td><td></td><td>Collection notes</td></tr>
+        <tr><td>resh_id / Lease ID</td><td class="type-tag">integer</td><td></td><td>Cross-reference to lease</td></tr>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_lease_expiration_renewal
+        <span class="table-desc">Current renewal pipeline — lease expiration and renewal decision tracking</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>lease_exp_re_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td></td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td><span class="constraint fk">FK→dim_unit</span></td><td></td></tr>
+        <tr><td>actual_rent / other_billings</td><td class="type-tag">money</td><td></td><td>Current lease financials</td></tr>
+        <tr><td>lease_end_date</td><td class="type-tag">date</td><td></td><td>Expiration date</td></tr>
+        <tr><td>decision</td><td class="type-tag">varchar(20)</td><td></td><td>Renewal / NTV / Undecided</td></tr>
+        <tr><td>new_rent / new_lease_term / new_lease_start_date</td><td class="type-tag">money / float / date</td><td></td><td>Offered renewal terms</td></tr>
+        <tr><td>last_increase / last_increase_amount</td><td class="type-tag">date / money</td><td></td><td>Prior rent increase history</td></tr>
+        <tr><td>import_type</td><td class="type-tag">varchar(10)</td><td></td><td>Source import classification</td></tr>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_unit_turn_capx_report / _rehab_report / _standard_report
+        <span class="table-desc">Capital expenditure, rehabilitation, and standard turn costs per unit</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>capx_history_id / rehab_history_id / standard_history_id</td><td class="type-tag">integer</td><td><span class="constraint pk">PK</span></td><td>Surrogate key</td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(30)</td><td><span class="constraint fk">FK→dim_unit</span></td><td></td></tr>
+        <tr><td>gl_code / gl_description</td><td class="type-tag">varchar</td><td></td><td>GL account for the spend</td></tr>
+        <tr><td>invoice_date / posting_date</td><td class="type-tag">timestamp</td><td></td><td>Transaction timing</td></tr>
+        <tr><td>sum_of_line_item_total</td><td class="type-tag">double precision</td><td></td><td>Invoice amount</td></tr>
+        <tr><td>supplier_name</td><td class="type-tag">varchar(100)</td><td></td><td>Vendor name</td></tr>
+        <tr><td>category_name</td><td class="type-tag">varchar(50)</td><td></td><td>Work category</td></tr>
+        <tr><td>process_status / invoice_status</td><td class="type-tag">varchar</td><td></td><td>Approval workflow state</td></tr>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- FINANCIAL FACTS -->
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>FINANCIAL FACTS &nbsp;<span class="badge analytics">analytics</span></h3>
+  </div>
+  <div class="schema-body">
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_income_statement &amp; fact_budget_statement
+        <span class="table-desc">Monthly P&amp;L actuals vs. budget by property and GL category</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>propertyID</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→dim_info_property</span></td><td>Property identifier</td></tr>
+        <tr><td>month_end_date</td><td class="type-tag">timestamp</td><td><span class="constraint fk">FK→dimdate</span></td><td>Month period end date</td></tr>
+        <tr><td>category_id</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→dim_income_budget_category</span></td><td>GL category</td></tr>
+        <tr><td>category_value</td><td class="type-tag">money</td><td></td><td>Dollar amount for that GL category that month</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_bi_banner_report
+        <span class="table-desc">Capital project budget tracking from Banner accounting system</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Key</th><th>Description</th></tr>
+        <tr><td>property_code</td><td class="type-tag">integer</td><td><span class="constraint fk">FK→dim_info_property</span></td><td></td></tr>
+        <tr><td>project_id / project_name</td><td class="type-tag">varchar</td><td></td><td>Capital project identifier</td></tr>
+        <tr><td>budget / paid_to_date / spend</td><td class="type-tag">money</td><td></td><td>Financial tracking columns</td></tr>
+        <tr><td>approved_spend / unapproved_spend / budget_variance</td><td class="type-tag">money</td><td></td><td>Approval pipeline amounts</td></tr>
+        <tr><td>capital_type</td><td class="type-tag">varchar(50)</td><td></td><td>Type of capital expenditure</td></tr>
+        <tr><td>status</td><td class="type-tag">varchar(50)</td><td></td><td>Project status</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ENGAGEMENT FACTS -->
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>LEASING ENGAGEMENT &amp; REPUTATION FACTS &nbsp;<span class="badge analytics">analytics</span></h3>
+  </div>
+  <div class="schema-body">
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_knock_activity_feed_stage (daily &amp; weekly)
+        <span class="table-desc">Leasing agent activity from Knock CRM — contacts, visits, applications, leases</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>OnesiteID</td><td class="type-tag">integer</td><td>FK → dim_info_property (onsiteid)</td></tr>
+        <tr><td>StartDate / EndDate</td><td class="type-tag">date</td><td>Reporting period</td></tr>
+        <tr><td>Leads / Prospects / Visits / Applications / Leases</td><td class="type-tag">integer</td><td>Funnel metrics</td></tr>
+        <tr><td>Call / Email / Text / Facebook / Bulk_Email</td><td class="type-tag">integer</td><td>Contact channel counts</td></tr>
+        <tr><td>Followups, ApptsSched, Appts, WalkIn</td><td class="type-tag">integer</td><td>Activity counts</td></tr>
+        <tr><td>Followups/Prospect, Call/Prospect (ratios)</td><td class="type-tag">integer</td><td>Efficiency metrics</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_soci_details_snapshot
+        <span class="table-desc">Online reputation snapshot — aggregate review scores across 11+ platforms</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>onesiteid</td><td class="type-tag">double precision</td><td>FK → dim_info_property</td></tr>
+        <tr><td>snapshot_date</td><td class="type-tag">date</td><td>Date of the snapshot</td></tr>
+        <tr><td>average_review_rating</td><td class="type-tag">double precision</td><td>Overall cross-platform average</td></tr>
+        <tr><td>google_business_profile_average_rating</td><td class="type-tag">double precision</td><td>Google rating</td></tr>
+        <tr><td>yelp_average_rating</td><td class="type-tag">double precision</td><td>Yelp rating</td></tr>
+        <tr><td>[platform]_positive/neutral/negative_reviews</td><td class="type-tag">double precision</td><td>Review sentiment breakdown per platform</td></tr>
+        <tr><td>[platform]_number_of_unresponded_reviews</td><td class="type-tag">double precision</td><td>Unanswered reviews</td></tr>
+        <tr><td>Platforms covered</td><td class="type-tag">—</td><td>Google, Yelp, Facebook, Apartments.com, ApartmentGuide, Rent.com, Hotpads, Citysearch, TripAdvisor, ModernMessage, ApartmentRatings</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-name fact-border"><span class="badge analytics">FACT</span> fact_ellis_kpi_feed_stage_weekly / _monthly
+        <span class="table-desc">Resident satisfaction KPI scores from Ellis survey system</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>onesiteid</td><td class="type-tag">integer</td><td>FK → dim_info_property</td></tr>
+        <tr><td>weekstartdate / weekenddate (or monthyear)</td><td class="type-tag">date / int</td><td>Period identifier</td></tr>
+        <tr><td>loyalty_score</td><td class="type-tag">integer</td><td>Overall loyalty / NPS-style score</td></tr>
+        <tr><td>customer_service</td><td class="type-tag">integer</td><td>Customer service KPI score</td></tr>
+        <tr><td>maintenance_satisfaction</td><td class="type-tag">integer</td><td>Maintenance team score</td></tr>
+        <tr><td>community_sentiment</td><td class="type-tag">integer</td><td>Community feel score</td></tr>
+        <tr><td>perceived_value</td><td class="type-tag">integer</td><td>Rent-to-value perception</td></tr>
+        <tr><td>property_satisfaction</td><td class="type-tag">integer</td><td>Overall property satisfaction</td></tr>
+        <tr><td>renewal_decision</td><td class="type-tag">integer</td><td>Likelihood to renew score</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- KPI SUMMARY TABLES -->
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>KPI SUMMARY / AGGREGATED ANALYTIC TABLES &nbsp;<span class="badge analytics">analytics</span></h3>
+  </div>
+  <div class="schema-body">
+    <div class="table-card">
+      <div class="table-name kpi-border"><span class="badge analytics">KPI</span> olympus_lease_trend_analysis
+        <span class="table-desc">Daily property-level lease and occupancy KPIs — primary dashboard source</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>property_number</td><td class="type-tag">integer</td><td>FK → dim_info_property</td></tr>
+        <tr><td>date</td><td class="type-tag">date</td><td>Snapshot date (PK with property_number)</td></tr>
+        <tr><td>total_units</td><td class="type-tag">integer</td><td>Total rentable units on that date</td></tr>
+        <tr><td>occupied_units</td><td class="type-tag">integer</td><td>Occupied unit count</td></tr>
+        <tr><td>percentage_occupacy</td><td class="type-tag">double precision</td><td>Occupancy % (occupied / total)</td></tr>
+        <tr><td>total_move_ins / total_move_outs</td><td class="type-tag">integer</td><td>Daily move activity counts</td></tr>
+        <tr><td>effective_rent / market_rent</td><td class="type-tag">double precision</td><td>Average effective vs. market rent</td></tr>
+        <tr><td>avg_amount_per_sqft</td><td class="type-tag">double precision</td><td>Average rent per square foot</td></tr>
+        <tr><td>visit / applications / cancelled / denied</td><td class="type-tag">integer</td><td>Leasing funnel metrics</td></tr>
+        <tr><td>NTV / MTM / make_ready / down</td><td class="type-tag">integer</td><td>Unit status counts</td></tr>
+        <tr><td>vacant_pre_leased / occupied_pre_leased</td><td class="type-tag">integer</td><td>Preleasing pipeline</td></tr>
+        <tr><td>current_month_expiring / next_month_expiring / month_after_next_expiring</td><td class="type-tag">integer</td><td>Lease expiration pipeline (90-day view)</td></tr>
+        <tr><td>tbd_90_days</td><td class="type-tag">integer</td><td>Undecided renewals in 90-day window</td></tr>
+      </table>
+    </div>
+    <div class="table-card">
+      <div class="table-name kpi-border"><span class="badge analytics">KPI</span> olympus_lease_kpis_trend_monthly
+        <span class="table-desc">Monthly KPI rollup — operations, financials, renewals, turns</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>property_number</td><td class="type-tag">integer</td><td>FK → dim_info_property</td></tr>
+        <tr><td>EndDateOfMonth / kpi_month</td><td class="type-tag">date / varchar</td><td>Period</td></tr>
+        <tr><td>exposure</td><td class="type-tag">double precision</td><td>Vacancy exposure %</td></tr>
+        <tr><td>delinquency</td><td class="type-tag">double precision</td><td>Delinquency %</td></tr>
+        <tr><td>average_turn_time</td><td class="type-tag">double precision</td><td>Avg days to turn a unit</td></tr>
+        <tr><td>service_request</td><td class="type-tag">integer</td><td>Open service request count</td></tr>
+        <tr><td>renewel_conversion / expirations / renewed</td><td class="type-tag">double/int</td><td>Renewal metrics</td></tr>
+        <tr><td>d0_30 / d30_60 / d60_90</td><td class="type-tag">double precision</td><td>Delinquency aging buckets</td></tr>
+        <tr><td>rent_cur / rent_prev / rent_prev_last</td><td class="type-tag">double precision</td><td>3-month rent trend</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════  STAGING SCHEMA  ═══════════════ -->
+<h2>7. staging Schema — ETL Landing Tables</h2>
+<div class="section-intro">All staging tables are <strong>truncated and reloaded daily</strong> by the Prefect ETL pipeline. They use raw text/varchar columns (no type enforcement). They serve as temporary landing zones before stored procedures transform data into the analytics schema.</div>
+
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>STAGING TABLES &nbsp;<span class="badge staging">staging</span> — 47 tables</h3>
+  </div>
+  <div class="schema-body">
+    <table class="rel-table" style="font-size:12px;">
+      <tr>
+        <th>#</th><th>Table Name</th><th>Source System</th><th>Target Fact/Dim Table</th><th>Key Columns</th>
+      </tr>
+      <tr><td>1</td><td><code>all_units_stage</code></td><td>Ellis PMS</td><td>fact_lease_all_units, dim_unit</td><td>Bldg/Unit, Floor plan, Market/Lease Rent</td></tr>
+      <tr><td>2</td><td><code>lease_details_stage</code></td><td>Ellis PMS</td><td>fact_lease</td><td>lease_id, unit_id, lease dates, rent amounts</td></tr>
+      <tr><td>3</td><td><code>lease_expiration_stage</code></td><td>Ellis PMS</td><td>fact_lease_expiration_renewal</td><td>unit, floor_plan, decision, new_rent</td></tr>
+      <tr><td>4</td><td><code>resident_demographics_stage</code></td><td>Ellis PMS</td><td>dim_resident_demographics</td><td>resident_id, gender, age, income</td></tr>
+      <tr><td>5</td><td><code>unit_availability_data_stage</code></td><td>Ellis PMS</td><td>fact_availability_history</td><td>unit, type, is_available, days_vacant</td></tr>
+      <tr><td>6</td><td><code>unit_turnover_stage</code></td><td>Ellis PMS</td><td>fact_turnover_history</td><td>unit, move_out_date, turnover_days</td></tr>
+      <tr><td>7</td><td><code>unit_availbility_report_stage</code></td><td>Ellis PMS (report)</td><td>— (supplemental availability)</td><td>unit, availability type, dates</td></tr>
+      <tr><td>8</td><td><code>unit_amenties_report_stage</code></td><td>Ellis PMS</td><td>dim_unit_amenties_hist</td><td>unit, amenity, value</td></tr>
+      <tr><td>9</td><td><code>unit_rent_summary_report_stage</code></td><td>AIRM</td><td>fact_unit_type_market_rates</td><td>unit_type, market_rent, floor_plan</td></tr>
+      <tr><td>10</td><td><code>income_statement_stage</code></td><td>Finance/PowerBI</td><td>fact_income_statement</td><td>propertyID, month_end_date, category, amount</td></tr>
+      <tr><td>11</td><td><code>budget_statement_stage</code></td><td>Finance/PowerBI</td><td>fact_budget_statement</td><td>propertyID, month_end_date, category, amount</td></tr>
+      <tr><td>12</td><td><code>delinquent_report_stage</code></td><td>Ellis PMS</td><td>fact_delinquent_history</td><td>unit, balances, aging buckets</td></tr>
+      <tr><td>13</td><td><code>lease_report_stage</code></td><td>AIRM</td><td>fact_lease_report</td><td>lease_id, gross_rent, eff_rent, move dates</td></tr>
+      <tr><td>14</td><td><code>lease_trade_report_stage</code></td><td>AIRM</td><td>fact_lease_trade_out_report</td><td>unit, current vs previous lease rent, trade-out %</td></tr>
+      <tr><td>15</td><td><code>units_weekly_stats_stage</code></td><td>Ellis PMS</td><td>fact_weekly_report</td><td>property, week_date, occupancy stats</td></tr>
+      <tr><td>16</td><td><code>load_stage_friday_renewals_data</code></td><td>Ellis PMS (Friday)</td><td>fact_pending_renewals_history</td><td>unit, renewal_status, new_lease_rent</td></tr>
+      <tr><td>17</td><td><code>requests_reports_stage</code></td><td>Maintenance</td><td>dim_requests</td><td>request_number, unit, status, dates</td></tr>
+      <tr><td>18</td><td><code>service_requests_report_stage</code></td><td>Maintenance (new)</td><td>dim_requests_new</td><td>request_number, category, item, issue, priority</td></tr>
+      <tr><td>19</td><td><code>market_rate_report_stage</code></td><td>Market Research</td><td>fact_unit_type_market_rates</td><td>property, unit_type, market_rent</td></tr>
+      <tr><td>20</td><td><code>unit_renewal_offer_analysis_report_stage</code></td><td>Revenue Mgmt</td><td>fact_unit_renewel_offer_analysis</td><td>unit, offered rent, adjustment %, current vs new lease</td></tr>
+      <tr><td>21</td><td><code>unit_turn_capx_report_stage</code></td><td>Banner/CAPEX</td><td>fact_unit_turn_capx_report</td><td>unit, gl_code, invoice, sum_line_item_total</td></tr>
+      <tr><td>22</td><td><code>unit_turn_rehab_report_stage</code></td><td>Banner/Rehab</td><td>fact_unit_turn_rehab_report</td><td>unit, gl_code, invoice, supplier, amount</td></tr>
+      <tr><td>23</td><td><code>unit_standard_turn_report_stage</code></td><td>Operations</td><td>fact_unit_turn_standard_report</td><td>unit, gl_code, invoice, supplier, amount</td></tr>
+      <tr><td>24</td><td><code>knock_activity_feed_stage</code></td><td>Knock CRM</td><td>fact_knock_activity_feed_stage</td><td>Property, OnesiteID, Leads, Visits, Leases, start/end date</td></tr>
+      <tr><td>25</td><td><code>knock_activity_feed_stage_weekly</code></td><td>Knock CRM</td><td>fact_knock_activity_feed_stage_weekly</td><td>Same as daily, weekly grain</td></tr>
+      <tr><td>26</td><td><code>knock_conversion_feed_stage</code></td><td>Knock CRM</td><td>fact_knock_conversion_feed_stage</td><td>property, lead/prospect/visit/lease counts, conversion %</td></tr>
+      <tr><td>27</td><td><code>knock_engagement_feed_stage</code></td><td>Knock CRM</td><td>fact_knock_engagement_feed</td><td>property, scores, green/red counts</td></tr>
+      <tr><td>28</td><td><code>soci_report_stage</code></td><td>SOCI</td><td>fact_soci_details_snapshot</td><td>project_id, ratings, review counts by platform</td></tr>
+      <tr><td>29</td><td><code>soci_review_feed_stage</code></td><td>SOCI</td><td>fact_soci_review_feed_details</td><td>review_id, site, rating, review text, response</td></tr>
+      <tr><td>30</td><td><code>google_review_stage</code></td><td>Google Reviews</td><td>property_google_review</td><td>PropertyID, date, stars, review count</td></tr>
+      <tr><td>31</td><td><code>bi_ellis_loyality_feed_stage_weekly/monthly</code></td><td>Ellis Loyalty</td><td>fact_bi_ellis_loyality_feed_stage_*</td><td>property, loyalty scores, survey counts by category</td></tr>
+      <tr><td>32</td><td><code>bi_ellis_kpi_feed_stage_weekly/monthly</code></td><td>Ellis KPI</td><td>fact_ellis_kpi_feed_stage_*</td><td>property, KPI scores by dimension</td></tr>
+      <tr><td>33</td><td><code>bi_weekly_rent_grata_report_stage</code></td><td>Rent Grata</td><td>fact_weekly_rent_grata_report</td><td>property, rewards, move-in count, cost per move-in</td></tr>
+      <tr><td>34</td><td><code>bi_weekly_rent_grata_unpaid_rewards_stage</code></td><td>Rent Grata</td><td>fact_rent_grata_unpaid_rewards</td><td>property, recipient, reward_amount, past_due_days</td></tr>
+      <tr><td>35</td><td><code>bi_banner_error_report_stage</code></td><td>Banner Accounting</td><td>fact_bi_banner_report</td><td>property, gl_code, project, budget, spend</td></tr>
+      <tr><td>36</td><td><code>bi_banner_error_pending_invoices_report_stage</code></td><td>Banner</td><td>fact_banners_pending_invoices</td><td>property, vendor, invoice_amount</td></tr>
+      <tr><td>37</td><td><code>bi_banner_error_assigned_invoices_report_stage</code></td><td>Banner</td><td>fact_banners_assigned_invoices</td><td>property, invoice_number, paid_amount</td></tr>
+      <tr><td>38</td><td><code>bi_banner_error_dv_invoices_report_stage</code></td><td>Banner</td><td>DV invoices tracking</td><td>property, assigned/unassigned invoice totals</td></tr>
+      <tr><td>39</td><td><code>lease_activity_report_new_stage</code></td><td>Ellis PMS (Visits)</td><td>fact_lease_activity_detail_new</td><td>gcardID, unit, OccStatus, ActivityType, date</td></tr>
+      <tr><td>40</td><td><code>entities_stage</code></td><td>Admin</td><td>dim_info_property</td><td>entity_id, entity_name, federal_id</td></tr>
+      <tr><td>41</td><td><code>property_acquisition_stage</code></td><td>Acquisitions</td><td>dim_info_property</td><td>acquisition_date, property details</td></tr>
+      <tr><td>42</td><td><code>property_info_stage</code></td><td>Revenue Mgmt</td><td>dim_info_property</td><td>Full property metadata</td></tr>
+      <tr><td>43</td><td><code>contact_level_details</code></td><td>Ellis PMS (PG only)</td><td>dim_contact_level_details</td><td>resident_member_id, employment, screening, demographics</td></tr>
+      <tr><td>44</td><td><code>lease_activity_detail_stage</code></td><td>Ellis PMS (legacy)</td><td>fact_lease_activity_detail</td><td>agent, contact dates, traffic origin</td></tr>
+      <tr><td>45</td><td><code>unit_setup_view_stage</code></td><td>Ellis PMS</td><td>Supplemental unit setup</td><td>unit details, setup attributes</td></tr>
+      <tr><td>46</td><td><code>wrk_new_income_budget_categories</code></td><td>Finance (work)</td><td>dim_income_budget_category</td><td>category mappings</td></tr>
+      <tr><td>47</td><td><code>central_flats_lease_details</code></td><td>Central Flats (special)</td><td>central_flats_lease_details_raw</td><td>lease details for Central Flats property</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════  WEB AI SCHEMA  ═══════════════ -->
+<h2>8. web_ai Schema — Application Layer</h2>
+<div class="section-intro">Django ORM tables backing the Olympus web application and AI-powered analytics endpoints. Key tables mirror analytics KPI tables for API consumption.</div>
+
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>WEB APP TABLES &nbsp;<span class="badge web_ai">web_ai</span></h3>
+  </div>
+  <div class="schema-body">
+    <table class="rel-table" style="font-size:12px;">
+      <tr><th>Table</th><th>Purpose</th><th>Notes</th></tr>
+      <tr><td><code>olympus_lease_trend_analysis</code></td><td>Daily KPI mirror</td><td>Copy of analytics.olympus_lease_trend_analysis for web API</td></tr>
+      <tr><td><code>olympus_lease_kpis_trend_monthly</code></td><td>Monthly KPI mirror</td><td>Copy of analytics.olympus_lease_kpis_trend_monthly</td></tr>
+      <tr><td><code>olympus_lease_moveout_reasons_trend_monthly</code></td><td>Move-out analytics</td><td>Monthly move-out reason category counts</td></tr>
+      <tr><td><code>income_statement_actual</code></td><td>P&amp;L actuals</td><td>Income statement data for web display</td></tr>
+      <tr><td><code>income_statement_summary</code></td><td>P&amp;L summary</td><td>Aggregated income summary</td></tr>
+      <tr><td><code>budget_line_item</code></td><td>Budget details</td><td>Line-item budget data for web UI</td></tr>
+      <tr><td><code>property_master</code></td><td>Property reference</td><td>Lightweight property list for web app</td></tr>
+      <tr><td><code>renewal_tracking_override</code></td><td>Manual overrides</td><td>Analyst manual renewal decision overrides</td></tr>
+      <tr><td><code>critical_incident</code></td><td>Incident tracking</td><td>Property-level critical incident log</td></tr>
+      <tr><td><code>auth_user / auth_group</code></td><td>Django auth</td><td>Standard Django authentication tables</td></tr>
+      <tr><td><code>django_admin_log</code></td><td>Admin audit</td><td>Admin action audit log</td></tr>
+      <tr><td><code>django_migrations</code></td><td>Schema versioning</td><td>Migration history</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════  etl_alerts  ═══════════════ -->
+<h2>9. etl_alerts Schema — Pipeline Monitoring</h2>
+<div class="schema-section">
+  <div class="schema-header">
+    <h3>ALERT TABLES &nbsp;<span class="badge etl">etl_alerts</span></h3>
+  </div>
+  <div class="schema-body">
+    <div class="table-card">
+      <div class="table-name"><span class="badge etl">ALERT</span> lease_trade_out_alert
+        <span class="table-desc">Data quality alerts for lease trade-out report anomalies</span></div>
+      <table class="col-table">
+        <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+        <tr><td>report_name</td><td class="type-tag">varchar(50)</td><td>Report that triggered the alert</td></tr>
+        <tr><td>site_id_property_unit_number</td><td class="type-tag">varchar(50)</td><td>Unit that has the data issue</td></tr>
+        <tr><td>property_name</td><td class="type-tag">varchar(100)</td><td></td></tr>
+        <tr><td>current_lease_lease_start</td><td class="type-tag">varchar(20)</td><td>Problematic lease start value</td></tr>
+        <tr><td>logdate</td><td class="type-tag">timestamp</td><td>When the alert was logged</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════  KEY IDENTIFIER GLOSSARY  ═══════════════ -->
+<h2>10. Key Identifier Glossary</h2>
+<table class="rel-table">
+  <tr><th>Identifier</th><th>Type</th><th>Format / Example</th><th>Used In</th><th>Description</th></tr>
+  <tr><td><code>site_id_property_unit_number</code></td><td>varchar(50)</td><td>"12345-101-1A"</td><td>All unit-level fact tables, dim_unit</td><td>Primary cross-table join key. Composite of OneSiteID + PropertyNumber + UnitNumber</td></tr>
+  <tr><td><code>onsiteid</code></td><td>integer</td><td>12345</td><td>dim_info_property, dim_unit, SOCI, Knock, Ellis facts</td><td>Ellis PMS / OneSite property identifier — used by all external system integrations</td></tr>
+  <tr><td><code>property_number</code></td><td>integer</td><td>101</td><td>dim_info_property, fact_weekly_report, KPI tables</td><td>Internal Olympus property number — used in weekly and trend tables</td></tr>
+  <tr><td><code>entity_id</code></td><td>integer</td><td>346</td><td>dim_info_property (PK)</td><td>Master property entity key (some properties have multiple entity_ids due to recap/ownership changes)</td></tr>
+  <tr><td><code>lease_id</code></td><td>integer</td><td>78901</td><td>fact_lease (PK)</td><td>Ellis PMS lease identifier — unique per lease agreement</td></tr>
+  <tr><td><code>resident_id</code></td><td>integer</td><td>55432</td><td>dim_resident_demographics (PK)</td><td>Resident identifier from Ellis PMS</td></tr>
+  <tr><td><code>resident_member_id</code></td><td>integer</td><td>99123</td><td>dim_contact_level_details (PK)</td><td>Contact-level resident ID (more granular than resident_id)</td></tr>
+  <tr><td><code>category_id</code></td><td>integer</td><td>42</td><td>dim_income_budget_category (PK), fact_income_statement, fact_budget_statement</td><td>GL category surrogate key</td></tr>
+  <tr><td><code>datekey</code></td><td>integer</td><td>20260314</td><td>dimdate (PK)</td><td>YYYYMMDD integer date key</td></tr>
+  <tr><td><code>fulldatealternatekey</code></td><td>date</td><td>2026-03-14</td><td>dimdate</td><td>Actual date value — used for range queries in KPI/trend joins</td></tr>
+</table>
+
+<!-- ═══════════════  FOOTER  ═══════════════ -->
+<div style="margin-top:40px; padding:20px; background:#1a1a2e; color:#aaa; border-radius:8px; font-size:11px; text-align:center;">
+  Olympus Property Analytics — Data Model Document &nbsp;|&nbsp;
+  Generated from PostgreSQL dump: Olympus_Property_backup_20260311_105729.sql &nbsp;|&nbsp;
+  Database version: PostgreSQL 17.5 &nbsp;|&nbsp;
+  Document Date: March 2026
+</div>
+
+</div>
+</body>
+</html>

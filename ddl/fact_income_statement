@@ -1,0 +1,22 @@
+USE [Olympus_Property_Analytics]
+GO
+
+/****** Object:  Table [dbo].[fact_income_statement]    Script Date: 6/23/2023 7:02:44 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[fact_income_statement](
+[propertyID] [int] not NULL,
+	[month_end_date] [date] not NULL,
+	[category_id] [int] not NULL,
+	[category_value] [money] NULL,
+	[Insert_date] [datetime] NULL,
+	primary key ([propertyID],[category_id],[month_end_date]),
+	foreign key ([propertyID])  references [Olympus_Property_Analytics].[dbo].[dim_info_property]([entity_id]),
+	foreign key ([category_id])  references [Olympus_Property_Analytics].[dbo].[dim_income_budget_category]([category_id]
+	)	
+) ON [PRIMARY]
+GO

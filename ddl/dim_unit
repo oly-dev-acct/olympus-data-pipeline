@@ -1,0 +1,15 @@
+CREATE TABLE dim_unit (
+	site_id_property_unit_number varchar(50) NOT NULL,
+	onsiteid int NOT NULL,
+	property_name varchar(70) NOT NULL,
+	property_number int NOT NULL,
+	unit_number varchar(30) NOT NULL,
+	floor_plan varchar(30) NULL,
+	number_of_bedrooms float NULL,
+	sqft int NULL,
+	floor_level varchar(5) NULL,
+	insert_date [datetime] NOT NULL DEFAULT GETDATE(),
+	modified_date [datetime] NULL
+	PRIMARY KEY(site_id_property_unit_number)
+	FOREIGN KEY(property_number) REFERENCES dim_info_property ([entity_id])
+)

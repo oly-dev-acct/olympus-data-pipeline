@@ -1,0 +1,32 @@
+USE [Olympus_Property_Analytics]
+GO
+
+/****** Object:  Table [dbo].[dim_resident_demographics]    Script Date: 6/14/2023 1:46:52 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[dim_resident_demographics](
+	[resident_id] [int] IDENTITY(1,1) NOT NULL,
+	[site_id_property_unit_number] [varchar](50) NULL, 
+	[gender] [varchar](10) NULL,
+	[marital_status] [varchar](20) NULL,
+	[citizenship_ethnic_origin] [varchar](70) NULL,
+	[resident_status] [varchar](35) NULL,
+	[miles_to_work] [float] NULL,
+	[income] [money] NULL,
+	[name] [varchar](200) NULL,
+	[phone] [varchar](30) NULL,
+	[birth_date] [date] NULL,
+	[age] [int] NULL,
+	[household_status] [varchar](50) NULL,
+	[signer_status] [varchar](50) NULL,
+	[employer] [varchar](50) NULL,
+	[job_type] [varchar](50) NULL,
+	[insert_date] datetime NOT NULL DEFAULT GETDATE(),
+	primary key ([resident_id]),
+	FOREIGN KEY ([site_id_property_unit_number]) REFERENCES [Olympus_Property_Analytics].[dbo].[dim_unit]([site_id_property_unit_number])
+) ON [PRIMARY]
+GO
