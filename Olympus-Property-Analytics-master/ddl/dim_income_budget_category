@@ -1,7 +1,0 @@
-CREATE TABLE [dbo].[dim_income_budget_category](
-	[category_id] [int] IDENTITY(1,1) NOT NULL,
-	[category_name] [varchar](255) NULL,
-	[category_code] [int] NULL,
-	[parent_category_name] [varchar](255) NULL,
-    PRIMARY KEY (category_id)
-)
